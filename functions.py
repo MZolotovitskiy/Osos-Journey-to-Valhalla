@@ -37,7 +37,7 @@ def start_screen(screen):
     font = pygame.font.Font(None, 90)
     name_text = 'Путешествие Ососа в Вальгаллу'
     buttons_text = ['Новая игра', 'Сохранения', 'Настройки', 'Выход']
-    intro_bground = load_image('BGround.JPG')
+    intro_bground = load_image('StartScreenBG.jpeg')
     screen.blit(intro_bground, (0, 0))
     name_rendered = font.render(name_text, True, pygame.Color('white'))
     intro_rect = name_rendered.get_rect()
@@ -85,7 +85,7 @@ def start_screen(screen):
                 s.fill((190, 190, 190, 130))  # notice the alpha value in the color
                 screen.blit(s, (button_pos[i][0], button_pos[i][1] - 30))
                 break
-            elif not is_drawn:
+            elif is_drawn:
                 is_drawn = False
                 text_coord = 330
                 intro_rect = name_rendered.get_rect()
