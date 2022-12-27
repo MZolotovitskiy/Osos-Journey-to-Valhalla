@@ -32,24 +32,25 @@ def show_pos(pos):
 
 
 def start_screen(screen):
+    buttons = [(60, 340), (60, 427), (60, 527), (60, 601)]
     button_pos = []
     text_coord = 330
-    font = pygame.font.Font(None, 90)
+    font = pygame.font.Font('C:/Windows/Fonts/times.ttf', 80)
     name_text = 'Путешествие Ососа в Вальгаллу'
     buttons_text = ['Новая игра', 'Сохранения', 'Настройки', 'Выход']
     intro_bground = load_image('StartScreenBG.jpeg')
     screen.blit(intro_bground, (0, 0))
     name_rendered = font.render(name_text, True, pygame.Color('white'))
     intro_rect = name_rendered.get_rect()
-    intro_rect.x += 10
-    intro_rect.y += 10
+    intro_rect.x += 40
+    intro_rect.y += 30
     screen.blit(name_rendered, intro_rect)
-    font = pygame.font.Font(None, 60)
+    font = pygame.font.Font('C:/Windows/Fonts/times.ttf', 60)
     for line in buttons_text:
         string_rendered = font.render(line, True, pygame.Color('white'))
         intro_size = string_rendered.get_rect()
         intro_rect = intro_size
-        text_coord += 30
+        text_coord += 20
         intro_rect.top = text_coord
         intro_rect.x = 60
         text_coord += intro_rect.height
@@ -66,40 +67,40 @@ def start_screen(screen):
                 is_drawn = True
                 text_coord = 330
                 intro_rect = name_rendered.get_rect()
-                intro_rect.x += 10
-                intro_rect.y += 10
+                intro_rect.x += 40
+                intro_rect.y += 30
                 screen.fill('black')
                 screen.blit(intro_bground, (0, 0))
                 screen.blit(name_rendered, intro_rect)
-                font = pygame.font.Font(None, 60)
+                font = pygame.font.Font('C:/Windows/Fonts/times.ttf', 60)
                 for line in buttons_text:
                     string_rendered = font.render(line, True, pygame.Color('white'))
                     intro_size = string_rendered.get_rect()
                     intro_rect = intro_size
-                    text_coord += 30
+                    text_coord += 20
                     intro_rect.top = text_coord
                     intro_rect.x = 60
                     text_coord += intro_rect.height
                     screen.blit(string_rendered, intro_rect)
-                s = pygame.Surface((intro_rect[2] + 110, intro_rect[3] + 60), pygame.SRCALPHA)  # per-pixel alpha
+                s = pygame.Surface((intro_rect[2] + 140, intro_rect[3] + 20), pygame.SRCALPHA)  # per-pixel alpha
                 s.fill((190, 190, 190, 130))  # notice the alpha value in the color
-                screen.blit(s, (button_pos[i][0], button_pos[i][1] - 30))
+                screen.blit(s, (button_pos[i][0], button_pos[i][1] - 10))
                 break
             elif is_drawn:
                 is_drawn = False
                 text_coord = 330
                 intro_rect = name_rendered.get_rect()
-                intro_rect.x += 10
-                intro_rect.y += 10
+                intro_rect.x += 40
+                intro_rect.y += 30
                 screen.fill('black')
                 screen.blit(intro_bground, (0, 0))
                 screen.blit(name_rendered, intro_rect)
-                font = pygame.font.Font(None, 60)
+                font = pygame.font.Font('C:/Windows/Fonts/times.ttf', 60)
                 for line in buttons_text:
                     string_rendered = font.render(line, True, pygame.Color('white'))
                     intro_size = string_rendered.get_rect()
                     intro_rect = intro_size
-                    text_coord += 30
+                    text_coord += 20
                     intro_rect.top = text_coord
                     intro_rect.x = 60
                     text_coord += intro_rect.height
@@ -107,5 +108,14 @@ def start_screen(screen):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 menu_running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if pygame.Rect(buttons[3], (307, 87)).collidepoint(mouse_pos):
+                    terminate()
+
         pygame.display.flip()
         clock.tick(FPS)
+
+
+def write_intro(screen):
+    pass
