@@ -6,11 +6,11 @@ environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 
 FPS = 60
 pygame.init()
+pygame.mixer.init()
 size = WIDTH, HEIGHT = 1280, 720
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption('Osos Journey to Valhalla')
-pygame.mixer.init()
-music = pygame.mixer.Sound('Data/Music/menuLoop.mp3')
-music.play()
+pygame.mixer.music.load('Data/Music/menuLoop.mp3')
+pygame.mixer.music.play(-1)
 start_screen(screen)
 pygame.quit()

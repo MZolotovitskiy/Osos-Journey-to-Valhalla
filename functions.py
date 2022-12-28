@@ -2,6 +2,8 @@ import pygame
 import sys
 import os
 
+import pygame.draw
+
 FPS = 60
 
 
@@ -68,7 +70,25 @@ def start_screen(screen):
 
 
 def settings(screen):
-    write_settings(screen)
+    volume_bar_coord_x = 60
+    volume_bar = pygame.Rect((60, 437), (720, 10))
+    sound_square = pygame.Rect((500, 482), (30, 30))
+    write_settings(screen, volume_bar, volume_bar_coord_x, sound_square)
+    pygame.display.flip()
+    clock = pygame.time.Clock()
+    settings_running = True
+    while settings_running:
+        write_settings(screen, volume_bar, volume_bar_coord_x, sound_square)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if volume_bar.collidepoint(mouse_pos):
+                    volume_bar_coord_x = mouse_pos[0]
+                    pygame.mixer.music.set_volume(1 * (mouse_pos[0] - 60) / 720)
+        pygame.display.flip()
+        clock.tick(FPS)
 
 
 def write_intro(screen, buttons):
@@ -95,8 +115,38 @@ def write_intro(screen, buttons):
         screen.blit(string_rendered, intro_rect)
 
 
-def write_settings(screen):
+def write_settings(screen, volume_bar, volume_bar_coord_x, sound_square):
     screen.fill('black')
     intro_bground = load_image('StartScreenBG.jpeg')
     screen.blit(intro_bground, (0, 0))
+    text_coord = 330
+    font = pygame.font.Font('C:/Windows/Fonts/times.ttf', 80)
+    name_text = 'Путешествие Ососа в Вальгаллу'
+    name_rendered = font.render(name_text, True, pygame.Color('white'))
+    intro_rect = name_rendered.get_rect()
+    intro_rect.x += 40
+    intro_rect.y += 30
+    screen.blit(name_rendered, intro_rect)
     font = pygame.font.Font('C:/Windows/Fonts/times.ttf', 60)
+    volume_text = 'Громкость'
+    string_rendered = font.render(volume_text, True, pygame.Color('white'))
+    intro_size = string_rendered.get_rect()
+    intro_rect = intro_size
+    intro_rect.x = 60
+    text_coord += 20
+    intro_rect.top = text_coord
+    text_coord += intro_rect.height
+    screen.blit(string_rendered, intro_rect)
+    text_coord += 20
+    pygame.draw.rect(screen, 'white', volume_bar)
+    pygame.draw.circle(screen, (130, 130, 130), (volume_bar_coord_x, text_coord + 5), 10)
+    string = 'Выключить звук'
+    string_rendered = font.render(string, True, pygame.Color('white'))
+    intro_size = string_rendered.get_rect()
+    intro_rect = intro_size
+    intro_rect.x = 60
+    text_coord += 20
+    intro_rect.top = text_coord
+    text_coord += intro_rect.height
+    screen.blit(string_rendered, intro_rect)
+    pygame.draw.rect(screen, 'white', sound_square)
