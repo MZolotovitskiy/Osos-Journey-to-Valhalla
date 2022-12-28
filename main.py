@@ -1,9 +1,8 @@
-import pygame
 from functions import start_screen
+import pygame
 from os import environ
 
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
-
 
 FPS = 60
 pygame.init()
