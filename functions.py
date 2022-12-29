@@ -70,23 +70,40 @@ def start_screen(screen):
 
 
 def settings(screen):
-    volume_bar_coord_x = 60
+    volume_bar_coord_x = (pygame.mixer.music.get_volume() * 720) + 60
     volume_bar = pygame.Rect((60, 437), (720, 10))
     sound_square = pygame.Rect((500, 482), (30, 30))
-    write_settings(screen, volume_bar, volume_bar_coord_x, sound_square)
+    return_buttton = pygame.Rect(60, 544, 481, 67)
+    if pygame.mixer.music.get_busy():
+        sound_enabled = True
+    else:
+        sound_enabled = False
+    write_settings(screen, volume_bar, volume_bar_coord_x, sound_square, sound_enabled)
     pygame.display.flip()
     clock = pygame.time.Clock()
     settings_running = True
     while settings_running:
-        write_settings(screen, volume_bar, volume_bar_coord_x, sound_square)
+        write_settings(screen, volume_bar, volume_bar_coord_x, sound_square, sound_enabled)
+        mouse_pos = pygame.mouse.get_pos()
+        if return_buttton.collidepoint(mouse_pos):
+            s = pygame.Surface((return_buttton[2], return_buttton[3]), pygame.SRCALPHA)
+            s.fill((190, 190, 190, 130))
+            screen.blit(s, (return_buttton[0], return_buttton[1]))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_pos = pygame.mouse.get_pos()
                 if volume_bar.collidepoint(mouse_pos):
                     volume_bar_coord_x = mouse_pos[0]
                     pygame.mixer.music.set_volume(1 * (mouse_pos[0] - 60) / 720)
+                if sound_square.collidepoint(mouse_pos):
+                    sound_enabled = not sound_enabled
+                    if not sound_enabled:
+                        pygame.mixer.music.stop()
+                    else:
+                        pygame.mixer.music.play()
+                if return_buttton.collidepoint(mouse_pos):
+                    return
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -115,17 +132,23 @@ def write_intro(screen, buttons):
         screen.blit(string_rendered, intro_rect)
 
 
-def write_settings(screen, volume_bar, volume_bar_coord_x, sound_square):
+def write_settings(screen, volume_bar, volume_bar_coord_x, sound_square, sound_enabled):
     screen.fill('black')
     intro_bground = load_image('StartScreenBG.jpeg')
     screen.blit(intro_bground, (0, 0))
     text_coord = 330
     font = pygame.font.Font('C:/Windows/Fonts/times.ttf', 80)
     name_text = 'Путешествие Ососа в Вальгаллу'
+    settings_text = 'Настройки'
     name_rendered = font.render(name_text, True, pygame.Color('white'))
     intro_rect = name_rendered.get_rect()
     intro_rect.x += 40
     intro_rect.y += 30
+    screen.blit(name_rendered, intro_rect)
+    name_rendered = font.render(settings_text, True, pygame.Color('white'))
+    intro_rect = name_rendered.get_rect()
+    intro_rect.x += 40
+    intro_rect.y += 260
     screen.blit(name_rendered, intro_rect)
     font = pygame.font.Font('C:/Windows/Fonts/times.ttf', 60)
     volume_text = 'Громкость'
@@ -149,4 +172,15 @@ def write_settings(screen, volume_bar, volume_bar_coord_x, sound_square):
     intro_rect.top = text_coord
     text_coord += intro_rect.height
     screen.blit(string_rendered, intro_rect)
-    pygame.draw.rect(screen, 'white', sound_square)
+    if sound_enabled:
+        pygame.draw.rect(screen, 'white', sound_square, 1)
+    else:
+        pygame.draw.rect(screen, 'white', sound_square)
+    string = 'Вернуться в меню'
+    string_rendered = font.render(string, True, pygame.Color('white'))
+    string_size = string_rendered.get_rect()
+    string_rect = intro_size
+    string_rect.x = 60
+    text_coord += 20
+    string_rect.top = text_coord
+    screen.blit(string_rendered, string_rect)

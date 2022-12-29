@@ -11,6 +11,6 @@ size = WIDTH, HEIGHT = 1280, 720
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption('Osos Journey to Valhalla')
 pygame.mixer.music.load('Data/Music/menuLoop.mp3')
-pygame.mixer.music.play(-1)
+pygame.mixer.music.play(loops=-1)
 start_screen(screen)
 pygame.quit()
