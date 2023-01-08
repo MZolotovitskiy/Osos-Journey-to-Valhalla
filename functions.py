@@ -7,7 +7,7 @@ import pygame.draw
 FPS = 60
 
 
-def load_image(name, color_key=None):
+def load_image(name, color_key=None, path=''):
     fullname = os.path.join('Data', 'Images', name)
     try:
         image = pygame.image.load(fullname).convert()

@@ -3,7 +3,7 @@ import sys
 
 import pygame
 
-file_name = 'levels/alphatest.txt'
+file_name = 'alphatest.txt'
 FPS = 60
 pygame.init()
 pygame.key.set_repeat(100, 100)
@@ -17,9 +17,9 @@ clock = pygame.time.Clock()
 
 
 def load_level(filename):
-    filename = "data/tiles/" + filename
+    fullname = 'Data/' + 'levels/' + filename
     try:
-        with open(filename, 'r') as mapFile:
+        with open(fullname, 'r') as mapFile:
             level_map = [line.strip() for line in mapFile]
         max_width = max(map(len, level_map))
         return list(map(lambda x: x.ljust(max_width, '.'), level_map))
@@ -28,8 +28,8 @@ def load_level(filename):
         exit(-1)
 
 
-def load_image(name, color_key=None):
-    fullname = os.path.join('data', name)
+def load_image(name, color_key=None, path=''):
+    fullname = os.path.join('Data', path, name)
     try:
         image = pygame.image.load(fullname).convert()
     except pygame.error as message:
@@ -45,8 +45,8 @@ def load_image(name, color_key=None):
     return image
 
 
-tile_images = {'wall': load_image('box.png'), 'empty': load_image('grass.png')}
-player_image = load_image('mar.png')
+tile_images = {'wall': load_image('box.png', path='tiles'), 'empty': load_image('grass.png', path='tiles')}
+player_image = load_image('mar.png', path='tiles')
 
 tile_width = tile_height = 50
 player = None
@@ -152,7 +152,7 @@ while running:
     camera.update(player)
     for sprite in all_sprites:
         camera.apply(sprite)
-    fon = pygame.transform.scale(load_image('box.png'), (WIDTH, HEIGHT))
+    fon = pygame.transform.scale(load_image('box.png', path='tiles'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
     # screen.fill((0, 0, 0))
 
