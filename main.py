@@ -140,8 +140,9 @@ while running:
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
-    fon = pygame.transform.scale(load_image('data/textures/blocks/lava.png'), (WIDTH, HEIGHT))
-    screen.blit(fon, (0, 0))
+    # fon = pygame.transform.scale(load_image('data/textures/blocks/lava.png'), (WIDTH, HEIGHT))
+    # screen.blit(fon, (0, 0))
+    screen.fill(0, 255, 0)
     tiles_group.draw(screen)
     player_group.draw(screen)
     pygame.display.flip()
