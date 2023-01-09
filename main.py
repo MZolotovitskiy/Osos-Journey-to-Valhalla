@@ -45,7 +45,8 @@ def load_image(name, color_key=None):
 tile_images = {'wall': load_image('data/textures/blocks/obsidian.png'),
                'empty': load_image('data/textures/blocks/deepslate_tiles.png'),
                'portal': load_image('data/textures/blocks/portal.png')}
-player_image = load_image('data/textures/mobs/mar.png')
+player_image = load_image('data/textures/mobs/osos.png', -1)
+mob_images = {'scarecrow': load_image('data/textures/mobs/scarecrow.png', -1)}
 
 tile_width = tile_height = 64
 player = None
@@ -53,6 +54,7 @@ all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 wall_group = pygame.sprite.Group()
+portal_group = pygame.sprite.Group()
 
 
 class Tile(pygame.sprite.Sprite):
@@ -63,6 +65,8 @@ class Tile(pygame.sprite.Sprite):
             tile_width * pos_x, tile_height * pos_y)
         if tile_type == 'wall':
             self.add(wall_group)
+        if tile_type == 'portal':
+            self.add(portal_group)
 
 
 class Player(pygame.sprite.Sprite):
@@ -70,7 +74,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__(player_group, all_sprites)
         self.image = player_image
         self.rect = self.image.get_rect().move(
-            tile_width * pos_x + 15, tile_height * pos_y + 5)
+            tile_width * pos_x, tile_height * pos_y + 5)
 
     def move(self, dx, dy):
         self.rect.x += dx
@@ -78,6 +82,15 @@ class Player(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self, wall_group):
             self.rect.x -= dx
             self.rect.y -= dy
+        if pygame.sprite.spritecollideany(self, portal_group):
+            terminate()
+
+class Mob(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, who):
+        super().__init__(player_group, all_sprites)
+        self.image = mob_images[who]
+        self.rect = self.image.get_rect().move(tile_width * pos_x + 16, tile_height * pos_y + 16)
+
 
 
 class Camera:
@@ -108,6 +121,9 @@ def generate_level(level):
             elif level[y][x] == 'P':
                 Tile('portal', x, y)
             elif level[y][x] == 'M':
+                Tile('empty', x, y)
+                new_mob = Mob(x,y, 'scarecrow')
+            elif level[y][x] == 'G':
                 Tile('empty', x, y)
                 # new_mob = Mob(x,y)
     return new_player, x, y
