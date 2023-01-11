@@ -1,3 +1,14 @@
+import pygame
+import sys
+import random
+
+FPS = 60
+size = WIDTH, HEIGHT = 1280, 720
+pygame.init()
+screen = pygame.display.set_mode(size)
+pygame.display.set_caption('Osos Journey to Valhalla')
+
+
 import sys
 
 import pygame
