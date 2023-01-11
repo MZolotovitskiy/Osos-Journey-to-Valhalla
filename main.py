@@ -123,7 +123,7 @@ class Osos(pygame.sprite.Sprite):
             self.rect.y -= dy
         if pygame.sprite.spritecollideany(self, portal_next):
             k += 1
-            # player = None
+            # player = Noneddd
             # level_x = None
             # level_y = None
             player, level_x, level_y = generate_level(load_level(files[k]))
