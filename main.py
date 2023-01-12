@@ -46,7 +46,10 @@ tile_images = {'wall': load_image('data/textures/blocks/obsidian.png'),
                'empty': load_image('data/textures/blocks/deepslate_tiles.png'),
                'portal': load_image('data/textures/blocks/portal.png')}
 player_image = load_image('data/textures/mobs/osos.png', -1)
-mob_images = {'scarecrow': load_image('data/textures/mobs/scarecrow.png', -1)}
+mob_images = {
+    'scarecrow': pygame.transform.scale(load_image('data/textures/mobs/scarecrow.png',-1), (64, 64)),
+    'gid': pygame.transform.scale(load_image('data/textures/mobs/gid.png'), (54, 84))}
+key_image = load_image('data/textures/items/key.png', -1)
 
 tile_width = tile_height = 64
 player = None
@@ -55,6 +58,7 @@ tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 wall_group = pygame.sprite.Group()
 portal_group = pygame.sprite.Group()
+item_group = pygame.sprite.Group()
 
 
 class Tile(pygame.sprite.Sprite):
@@ -69,12 +73,39 @@ class Tile(pygame.sprite.Sprite):
             self.add(portal_group)
 
 
+class AnimatedSprite(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y):
+        super().__init__(all_sprites)
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect().move(
+            tile_width * x, tile_height * y)
+        self.add(all_sprites)
+        self.add(item_group)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+
+
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
         self.image = player_image
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y + 5)
+        self.inventory = []
 
     def move(self, dx, dy):
         self.rect.x += dx
@@ -83,14 +114,17 @@ class Player(pygame.sprite.Sprite):
             self.rect.x -= dx
             self.rect.y -= dy
         if pygame.sprite.spritecollideany(self, portal_group):
-            terminate()
+            if self.inventory:
+                terminate()
+            self.rect.x -= dx
+            self.rect.y -= dy
+
 
 class Mob(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y, who):
         super().__init__(player_group, all_sprites)
         self.image = mob_images[who]
-        self.rect = self.image.get_rect().move(tile_width * pos_x + 16, tile_height * pos_y + 16)
-
+        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
 
 class Camera:
@@ -108,6 +142,7 @@ class Camera:
 
 
 def generate_level(level):
+    global Key
     new_player, x, y = None, None, None
     for y in range(len(level)):
         for x in range(len(level[y])):
@@ -122,10 +157,13 @@ def generate_level(level):
                 Tile('portal', x, y)
             elif level[y][x] == 'M':
                 Tile('empty', x, y)
-                new_mob = Mob(x,y, 'scarecrow')
+                Mob(x, y, 'scarecrow')
             elif level[y][x] == 'G':
                 Tile('empty', x, y)
-                # new_mob = Mob(x,y)
+                Mob(x, y, 'gid')
+            elif level[y][x] == 'K':
+                Tile('empty', x, y)
+                Key = AnimatedSprite(key_image, 16, 1, x, y)
     return new_player, x, y
 
 
@@ -133,6 +171,10 @@ def terminate():
     pygame.quit()
     sys.exit()
 
+
+pygame.mixer.init()
+pygame.mixer.music.load('data/music/02_Svartalfheim.mp3')
+pygame.mixer.music.play(loops=-1)
 
 player, level_x, level_y = generate_level(load_level(file_name))
 
@@ -160,6 +202,8 @@ while running:
     screen.blit(fon, (0, 0))
     tiles_group.draw(screen)
     player_group.draw(screen)
+    Key.update()
+    item_group.draw(screen)
     pygame.display.flip()
     clock.tick(FPS)
 terminate()
