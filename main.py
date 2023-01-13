@@ -2,7 +2,7 @@ import sys
 
 import pygame
 
-file_name = 'data/levels/Svartalfheim.txt'
+file_name = 'data/levels/Svartalfh3im.txt'
 FPS = 60
 pygame.init()
 pygame.key.set_repeat(200, 70)
@@ -47,7 +47,8 @@ tile_images = {'wall': load_image('data/textures/blocks/obsidian.png'),
                'portal': load_image('data/textures/blocks/portal.png')}
 player_image = load_image('data/textures/mobs/osos.png', -1)
 mob_images = {
-    'scarecrow': pygame.transform.scale(load_image('data/textures/mobs/scarecrow.png',-1), (64, 64)),
+    'scarecrow': pygame.transform.scale(load_image('data/textures/mobs/scarecrow.png', -1),
+                                        (64, 64)),
     'gid': pygame.transform.scale(load_image('data/textures/mobs/gid.png'), (54, 84))}
 key_image = load_image('data/textures/items/key.png', -1)
 
@@ -59,6 +60,7 @@ player_group = pygame.sprite.Group()
 wall_group = pygame.sprite.Group()
 portal_group = pygame.sprite.Group()
 item_group = pygame.sprite.Group()
+interface_group = pygame.sprite.Group()
 
 
 class Tile(pygame.sprite.Sprite):
@@ -114,17 +116,25 @@ class Player(pygame.sprite.Sprite):
             self.rect.x -= dx
             self.rect.y -= dy
         if pygame.sprite.spritecollideany(self, portal_group):
-            if self.inventory:
+            k = 0
+            for i in self.inventory:
+                if i == 'KEY':
+                    k += 1
+            if k == 2:
                 terminate()
             self.rect.x -= dx
             self.rect.y -= dy
+        if other := pygame.sprite.spritecollideany(self, item_group):
+            self.inventory.append('KEY')
+            other.kill()
 
 
 class Mob(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, who):
+    def __init__(self, pos_x, pos_y, who, health):
         super().__init__(player_group, all_sprites)
         self.image = mob_images[who]
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+        self.health = health
 
 
 class Camera:
@@ -157,10 +167,10 @@ def generate_level(level):
                 Tile('portal', x, y)
             elif level[y][x] == 'M':
                 Tile('empty', x, y)
-                Mob(x, y, 'scarecrow')
+                Mob(x, y, 'scarecrow', 5)
             elif level[y][x] == 'G':
                 Tile('empty', x, y)
-                Mob(x, y, 'gid')
+                Mob(x, y, 'gid', 100)
             elif level[y][x] == 'K':
                 Tile('empty', x, y)
                 Key = AnimatedSprite(key_image, 16, 1, x, y)
@@ -171,6 +181,8 @@ def terminate():
     pygame.quit()
     sys.exit()
 
+def interface_init():
+    pass
 
 pygame.mixer.init()
 pygame.mixer.music.load('data/music/02_Svartalfheim.mp3')
@@ -198,11 +210,12 @@ while running:
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
-    fon = pygame.transform.scale(load_image('data/textures/blocks/lava.png'), (WIDTH, HEIGHT))
-    screen.blit(fon, (0, 0))
+    # fon = pygame.transform.scale(load_image('data/textures/blocks/lava.png'), (WIDTH, HEIGHT))
+    # screen.blit(fon, (0, 0))
+    screen.fill((0, 0, 0))
     tiles_group.draw(screen)
     player_group.draw(screen)
-    Key.update()
+    item_group.update()
     item_group.draw(screen)
     pygame.display.flip()
     clock.tick(FPS)
