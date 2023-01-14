@@ -18,7 +18,6 @@ screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 
 
-
 def load_level(filename):
     # filename = "data/" + filename
     try:
@@ -33,7 +32,7 @@ def load_level(filename):
 
 def load_image(name, color_key=None):
     try:
-        image = pygame.image.load(name).convert()
+        image = pygame.image.load(name)  # .convert()
     except pygame.error as message:
         print('Cannot load image:', name)
         raise SystemExit(message)
@@ -69,16 +68,21 @@ tile_images = {'wall': randomaiser('data/textures/blocks/wall'),
                'portal_back': load_image('data/textures/blocks/portal.png')}
 osos_images = {'left': load_image('data/textures/mobs/osos/left.png', -1),
                'right': load_image('data/textures/mobs/osos/right.png', -1)}
-
+mob_images = {'fiend': load_image('data/textures/mobs/fiend/stay.png', -1),
+              'fiend_attack': load_image('data/textures/mobs/fiend/attack.png', -1),
+              'golem': load_image('data/textures/mobs/golem/stay.png')}
+item_images = {'key': load_image('data/textures/items/key.png', -1)}
 tile_width = tile_height = 64
 player = None
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
+mob_group = pygame.sprite.Group()
 wall_group = pygame.sprite.Group()
 portal_next = pygame.sprite.Group()
 portal_DLC = pygame.sprite.Group()
 portal_back = pygame.sprite.Group()
+item_group = pygame.sprite.Group()
 
 
 class Tile(pygame.sprite.Sprite):
@@ -105,6 +109,32 @@ class Tile(pygame.sprite.Sprite):
             tile_width * pos_x, tile_height * pos_y)
 
 
+class AnimatedSprite(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y):
+        super().__init__(all_sprites)
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect = self.image.get_rect().move(
+            tile_width * x, tile_height * y)
+        self.add(all_sprites)
+        self.add(item_group)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+
+
 class Osos(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
@@ -112,6 +142,7 @@ class Osos(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
         self.health = 100
+        self.vector = 'left'
         self.inventory = []
 
     def move(self, dx, dy):
@@ -123,24 +154,39 @@ class Osos(pygame.sprite.Sprite):
             self.rect.y -= dy
         if pygame.sprite.spritecollideany(self, portal_next):
             k += 1
-            # player = Noneddd
-            # level_x = None
-            # level_y = None
             player, level_x, level_y = generate_level(load_level(files[k]))
         if pygame.sprite.spritecollideany(self, portal_DLC):
             player, level_x, level_y = generate_level(load_level(files_DLC))
         if pygame.sprite.spritecollideany(self, portal_back):
             k -= 1
-            # player = None
-            # level_x = None
-            # level_y = None
             player, level_x, level_y = generate_level(load_level(files[k]))
+        if other := pygame.sprite.spritecollideany(self, item_group):
+            self.inventory.append('KEY')
+            other.kill()
 
     def left_right(self, a):
         if a == 'left':
             self.image = osos_images['left']
         elif a == 'right':
             self.image = osos_images['right']
+
+
+class Mob(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, health, who):
+        super().__init__(player_group, all_sprites)
+        self.image = mob_images[who]
+        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+        self.health = health
+        self.vector = 'right'
+        self.add(mob_group)
+
+    def attack(self):
+        if player.rect.x < self.rect.x and self.vector == 'right':
+            self.image = pygame.transform.flip(self.image, True, False)
+            self.vector = 'left'
+        elif player.rect.x > self.rect.x and self.vector == 'left':
+            self.image = pygame.transform.flip(self.image, True, False)
+            self.vector = 'right'
 
 
 class Camera:
@@ -161,9 +207,9 @@ def generate_level(level):
     new_player, x, y = None, None, None
     for i in all_sprites:
         i.kill()
-    # load_fon = pygame.transform.scale(load_image('data/textures/fons/load.png'), (WIDTH, HEIGHT))
-    # screen.blit(load_fon, (0, 0))
-    # screen.fill((255, 255, 255))
+    load_fon = pygame.transform.scale(load_image('data/textures/fons/load.png'), (WIDTH, HEIGHT))
+    screen.blit(load_fon, (0, 0))
+    pygame.display.flip()
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
@@ -183,8 +229,13 @@ def generate_level(level):
                 Tile('portal_back', x, y)
             elif level[y][x] == 'M':
                 Tile('floor', x, y)
-                # new_mob = Mob(x,y, health)
-
+                Mob(x, y, 100, 'golem')
+            elif level[y][x] == 'm':
+                Tile('floor', x, y)
+                Mob(x, y, 60, 'fiend')
+            elif level[y][x] == 'K':
+                Tile('floor', x, y)
+                AnimatedSprite(item_images['key'], 16, 1, x, y)
     return new_player, x, y
 
 
@@ -203,7 +254,8 @@ camera = Camera()
 
 running = True
 while running:
-
+    if player.health <= 0:
+        break
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -221,11 +273,14 @@ while running:
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
-    # fon = pygame.transform.scale(load_image('data/textures/blocks/lava.png'), (WIDTH, HEIGHT))
-    # screen.blit(fon, (0, 0))
     screen.fill((0, 0, 0))
     tiles_group.draw(screen)
     player_group.draw(screen)
+    for i in mob_group:
+        if i.health <= 0:
+            i.kill()
+        else:
+            i.attack()
     pygame.display.flip()
     clock.tick(FPS)
 terminate()
