@@ -1,0 +1,30 @@
+.                                                                                                 .
+.                                                                                                 .
+.                                                                                                 .
+.                                                                                                 .
+.                                                                                                 .
+.         ................................................................................        .
+.         .                                           w                                  .        .
+.         .  P                                        w         ccccc       ccccc        .        .
+.         .          m    m    m    m    m    m       wwwwwwww  c   c       c   c        .        .
+.         .          c    c    c    c    c    c       wwwwww    c   c   B   c   c        .        .
+.         .          cccccccccccccccccccccccccc       wwww      c   c       c   c        .        .
+.         .          c                                ww        c   c       c   c        .        .
+.         .          c             wwwwwwwwwwwwwwwwwwwww        c   c       c   c        .        .
+.         .          c            w                   ww        cccccccccccccccccww      .        .
+.         .     cccccccccccccccccccccccccccccccccc    ww        @      ccc     wwwww     .        .
+.         .      cc               w     wwwwwwww cc   wwwwwwwwwwwwwwwwwcccwwwwwwwwwww    .        .
+.         .       cc              w    ww       wcccww                cccc    wwwwww     .        .
+.         .        cc             w   ww          ccc                cccc       www      .        .
+.         .         cc      W     w  ww            ccccccccccccccccccccc                 .        .
+.         .   L      cc     c     w ww              ccccccccccccccccccc                  .        .
+.         .   ccccccccccccccc     www       A        c                                   .        .
+.         .                       ww        cc       c                                   .        .
+.         .                      ww         cccccccccc                                   .        .
+.         .                     ww                                                       .        .
+.         ................................................................................        .
+.                                                                                                 .
+.                                                                                                 .
+.                                                                                                 .
+.                                                                                                 .
+.                                                                                                 .

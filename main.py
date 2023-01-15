@@ -2,7 +2,7 @@ import sys
 
 import pygame
 
-file_name = 'data/levels/Svartalfheim.txt'
+file_name = 'data/levels/Midgard.txt'
 FPS = 60
 pygame.init()
 pygame.key.set_repeat(200, 70)
@@ -42,10 +42,25 @@ def load_image(name, color_key=None):
     return image
 
 
-tile_images = {'wall': load_image('data/textures/blocks/obsidian.png'),
-               'empty': load_image('data/textures/blocks/deepslate_tiles.png'),
-               'portal': load_image('data/textures/blocks/portal.png')}
-player_image = load_image('data/textures/mobs/mar.png')
+tile_images = {'leaves': load_image('data/textures/blocks/bamboo_large_leaves.png'),
+               'empty': load_image('data/textures/blocks/grass.png'),
+               'portal': load_image('data/textures/blocks/portal.png'),
+               'water': load_image('data/textures/blocks/water.png'),
+               'road': load_image('data/textures/blocks/cobblestone.png'),
+               'mini': pygame.transform.scale(load_image('data/textures/houses/mini.png', -1),
+                                              (117, 147)),
+               'big': pygame.transform.scale(load_image('data/textures/houses/big.png', -1),
+                                             (415, 345)),
+               'storehouse': pygame.transform.scale(
+                   load_image('data/textures/houses/storehouse.png', -1),
+                   (268, 352)),
+               'typeL': pygame.transform.flip(
+                   pygame.transform.scale(load_image('data/textures/houses/typeL.png', -1),
+                                          (207, 234)), True, False),
+               'wood': pygame.transform.scale(load_image('data/textures/houses/wood.png', -1),
+                                              (180, 162))}
+osos_images = {'right': load_image('data/textures/mobs/osos/right.png', -1),
+               'left': load_image('data/textures/mobs/osos/left.png', -1)}
 
 tile_width = tile_height = 64
 player = None
@@ -53,6 +68,7 @@ all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 wall_group = pygame.sprite.Group()
+house_group = pygame.sprite.Group()
 
 
 class Tile(pygame.sprite.Sprite):
@@ -61,23 +77,47 @@ class Tile(pygame.sprite.Sprite):
         self.image = tile_images[tile_type]
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
-        if tile_type == 'wall':
+        self.add(all_sprites)
+        if tile_type in ['water', 'leaves']:
             self.add(wall_group)
+        if tile_type in ['mini', 'big', 'typeL', 'storehouse', 'wood']:
+            self.add(house_group)
+            if tile_type == 'mini':
+                self.rect = self.image.get_rect().move(
+                    tile_width * pos_x - 25, tile_height * pos_y - 80)
+            if tile_type == 'typeL':
+                self.rect = self.image.get_rect().move(
+                    tile_width * pos_x - 13, tile_height * pos_y - 164)
+            if tile_type == 'wood':
+                self.rect = self.image.get_rect().move(
+                    tile_width * pos_x - 55, tile_height * pos_y - 90)
+            if tile_type == 'big':
+                self.rect = self.image.get_rect().move(
+                    tile_width * pos_x - 160, tile_height * pos_y - 80)
 
 
-class Player(pygame.sprite.Sprite):
+class Osos(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
-        self.image = player_image
+        self.image = osos_images['right']
         self.rect = self.image.get_rect().move(
-            tile_width * pos_x + 15, tile_height * pos_y + 5)
+            tile_width * pos_x, tile_height * pos_y)
+        self.health = 100
+        self.inventory = []
 
     def move(self, dx, dy):
+        global player, level_x, level_y
         self.rect.x += dx
         self.rect.y += dy
         if pygame.sprite.spritecollideany(self, wall_group):
             self.rect.x -= dx
             self.rect.y -= dy
+
+    def left_right(self, a):
+        if a == 'left':
+            self.image = osos_images['left']
+        elif a == 'right':
+            self.image = osos_images['right']
 
 
 class Camera:
@@ -98,18 +138,35 @@ def generate_level(level):
     new_player, x, y = None, None, None
     for y in range(len(level)):
         for x in range(len(level[y])):
-            if level[y][x] == '.':
+            if level[y][x] in [' ', '\t', '\n']:
                 Tile('empty', x, y)
-            elif level[y][x] == '#':
-                Tile('wall', x, y)
+            elif level[y][x] == '.':
+                Tile('empty', x, y)
+                Tile('leaves', x, y)
+            elif level[y][x] == 'w':
+                Tile('water', x, y)
             elif level[y][x] == '@':
                 Tile('empty', x, y)
-                new_player = Player(x, y)
+                new_player = Osos(x, y)
             elif level[y][x] == 'P':
                 Tile('portal', x, y)
-            elif level[y][x] == 'M':
+            elif level[y][x] == 'c':
+                Tile('road', x, y)
+            elif level[y][x] == 'm':
                 Tile('empty', x, y)
-                # new_mob = Mob(x,y)
+                Tile('mini', x, y)
+            elif level[y][x] == 'L':
+                Tile('empty', x, y)
+                Tile('typeL', x, y)
+            elif level[y][x] == 'A':
+                Tile('empty', x, y)
+                Tile('storehouse', x, y)
+            elif level[y][x] == 'B':
+                Tile('empty', x, y)
+                Tile('big', x, y)
+            elif level[y][x] == 'W':
+                Tile('empty', x, y)
+                Tile('wood', x, y)
     return new_player, x, y
 
 
@@ -119,6 +176,10 @@ def terminate():
 
 
 player, level_x, level_y = generate_level(load_level(file_name))
+
+pygame.mixer.init()
+pygame.mixer.music.load('data/music/03_Midgard.flac')
+pygame.mixer.music.play(loops=-1)
 
 camera = Camera()
 
@@ -131,8 +192,10 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_a:
                 player.move(-STEP, 0)
+                player.left_right('left')
             if event.key == pygame.K_d:
                 player.move(STEP, 0)
+                player.left_right('right')
             if event.key == pygame.K_w:
                 player.move(0, -STEP)
             if event.key == pygame.K_s:
@@ -140,9 +203,11 @@ while running:
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
-    fon = pygame.transform.scale(load_image('data/textures/blocks/lava.png'), (WIDTH, HEIGHT))
-    screen.blit(fon, (0, 0))
+    # fon = pygame.transform.scale(load_image('data/textures/blocks/lava.png'), (WIDTH, HEIGHT))
+    # screen.blit(fon, (0, 0))
+    screen.fill((0, 0, 0))
     tiles_group.draw(screen)
+    house_group.draw(screen)
     player_group.draw(screen)
     pygame.display.flip()
     clock.tick(FPS)
