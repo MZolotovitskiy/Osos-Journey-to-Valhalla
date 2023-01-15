@@ -45,7 +45,8 @@ def load_image(name, color_key=None):
 tile_images = {'leaves': load_image('data/textures/blocks/bamboo_large_leaves.png'),
                'empty': load_image('data/textures/blocks/grass.png'),
                'portal': load_image('data/textures/blocks/portal.png'),
-               'water': load_image('data/textures/blocks/water.png'),
+               'waterH': load_image('data/textures/blocks/water_horizontal.png'),
+               'waterV': load_image('data/textures/blocks/water_vertical.png'),
                'road': load_image('data/textures/blocks/cobblestone.png'),
                'mini': pygame.transform.scale(load_image('data/textures/houses/mini.png', -1),
                                               (117, 147)),
@@ -78,7 +79,7 @@ class Tile(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
         self.add(all_sprites)
-        if tile_type in ['water', 'leaves']:
+        if tile_type in ['waterV', 'waterH', 'leaves']:
             self.add(wall_group)
         if tile_type in ['mini', 'big', 'typeL', 'storehouse', 'wood']:
             self.add(house_group)
@@ -144,7 +145,9 @@ def generate_level(level):
                 Tile('empty', x, y)
                 Tile('leaves', x, y)
             elif level[y][x] == 'w':
-                Tile('water', x, y)
+                Tile('waterH', x, y)
+            elif level[y][x] == 'v':
+                Tile('waterV', x, y)
             elif level[y][x] == '@':
                 Tile('empty', x, y)
                 new_player = Osos(x, y)
