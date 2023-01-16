@@ -1,6 +1,7 @@
 import sys
 
 import pygame
+import pygame.sprite
 
 file_name = 'data/levels/Svartalfh3im.txt'
 FPS = 60
@@ -42,15 +43,23 @@ def load_image(name, color_key=None):
     return image
 
 
+osos_images = {'left': load_image('data/textures/mobs/osos/left.png', -1),
+               'right': load_image('data/textures/mobs/osos/right.png', -1)}
 tile_images = {'wall': load_image('data/textures/blocks/obsidian.png'),
                'empty': load_image('data/textures/blocks/deepslate_tiles.png'),
                'portal': load_image('data/textures/blocks/portal.png')}
-player_image = load_image('data/textures/mobs/osos.png', -1)
 mob_images = {
     'scarecrow': pygame.transform.scale(load_image('data/textures/mobs/scarecrow.png', -1),
                                         (64, 64)),
     'gid': pygame.transform.scale(load_image('data/textures/mobs/gid.png'), (54, 84))}
 key_image = load_image('data/textures/items/key.png', -1)
+balticka3_images = {0: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/up.png', -1), 0, 0.05),
+                    1: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/right.png', -1), 0,
+                                                 0.05),
+                    2: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/down.png', -1), 0,
+                                                 0.05),
+                    3: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/left.png', -1), 0,
+                                                 0.05)}
 
 tile_width = tile_height = 64
 player = None
@@ -61,6 +70,8 @@ wall_group = pygame.sprite.Group()
 portal_group = pygame.sprite.Group()
 item_group = pygame.sprite.Group()
 interface_group = pygame.sprite.Group()
+projectiles = pygame.sprite.Group()
+mob_group = pygame.sprite.Group()
 
 
 class Tile(pygame.sprite.Sprite):
@@ -104,7 +115,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
-        self.image = player_image
+        self.image = osos_images['left']
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y + 5)
         self.inventory = []
@@ -128,6 +139,53 @@ class Player(pygame.sprite.Sprite):
             self.inventory.append('KEY')
             other.kill()
 
+    def left_right(self, a):
+        if a == 'left':
+            self.image = osos_images['left']
+        elif a == 'right':
+            self.image = osos_images['right']
+
+    def attack(self, step):
+        damage = 3
+        projectile = Projectile(self.rect.x, self.rect.y, step, damage)
+        all_sprites.add(projectile)
+        projectiles.add(projectile)
+
+
+class Projectile(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, step, damage):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = balticka3_images[0]
+        self.rect = self.image.get_rect().move(pos_x, pos_y)
+        self.start_x = pos_x
+        self.dx = 0
+        self.step = step
+        self.imnum = 0
+        if self.step < 0:
+            self.dn = -1
+        else:
+            self.dn = 1
+        self.damage = 3
+
+    def update(self):
+        self.imnum += self.dn
+        center = self.rect.center
+        if self.imnum > 3:
+            self.imnum = 0
+        elif self.imnum < 0:
+            self.imnum = 3
+        self.image = balticka3_images[self.imnum]
+        self.rect = self.image.get_rect(center=center)
+        self.rect.x += self.step
+        self.dx += 8
+        if self.dx >= 192:
+            self.kill()
+        if pygame.sprite.spritecollideany(self, wall_group):
+            self.kill()
+        if pygame.sprite.spritecollideany(self, mob_group):
+            pygame.sprite.spritecollideany(self, mob_group).health -= self.damage
+            self.kill()
+
 
 class Mob(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y, who, health):
@@ -135,6 +193,11 @@ class Mob(pygame.sprite.Sprite):
         self.image = mob_images[who]
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
         self.health = health
+        mob_group.add(self)
+
+    def update(self):
+        if self.health <= 0:
+            self.kill()
 
 
 class Camera:
@@ -181,8 +244,10 @@ def terminate():
     pygame.quit()
     sys.exit()
 
+
 def interface_init():
     pass
+
 
 pygame.mixer.init()
 pygame.mixer.music.load('data/music/02_Svartalfheim.mp3')
@@ -191,8 +256,10 @@ pygame.mixer.music.play(loops=-1)
 player, level_x, level_y = generate_level(load_level(file_name))
 
 camera = Camera()
-
+direction = True
 running = True
+room = 4
+shot_room = 60
 while running:
 
     for event in pygame.event.get():
@@ -201,12 +268,23 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_a:
                 player.move(-STEP, 0)
+                player.left_right('left')
+                direction = True
             if event.key == pygame.K_d:
                 player.move(STEP, 0)
+                player.left_right('right')
+                direction = False
             if event.key == pygame.K_w:
                 player.move(0, -STEP)
             if event.key == pygame.K_s:
                 player.move(0, STEP)
+            if event.key == pygame.K_SPACE:
+                if shot_room >= 60:
+                    if direction:
+                        player.attack(-8)
+                    else:
+                        player.attack(8)
+                    shot_room = 0
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
@@ -217,6 +295,13 @@ while running:
     player_group.draw(screen)
     item_group.update()
     item_group.draw(screen)
+    mob_group.update()
+    if room >= 3:
+        projectiles.update()
+        projectiles.draw(screen)
+        room = 0
+    room += 1
+    shot_room += 1
     pygame.display.flip()
     clock.tick(FPS)
 terminate()
