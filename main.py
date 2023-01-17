@@ -49,7 +49,11 @@ tile_images = {'wall': load_image('data/textures/blocks/obsidian.png'),
                'empty': load_image('data/textures/blocks/deepslate_tiles.png'),
                'portal': load_image('data/textures/blocks/portal.png')}
 mob_images = {
-    'scarecrow': pygame.transform.scale(load_image('data/textures/mobs/scarecrow.png', -1),
+    'scarecrow': pygame.transform.scale(load_image('data/textures/mobs/scarecrow/standard.png', -1),
+                                        (64, 64)),
+    'gid': pygame.transform.scale(load_image('data/textures/mobs/gid.png'), (54, 84))}
+damaged_mob_images = {
+    'scarecrow': pygame.transform.scale(load_image('data/textures/mobs/scarecrow/damage.png', -1),
                                         (64, 64)),
     'gid': pygame.transform.scale(load_image('data/textures/mobs/gid.png'), (54, 84))}
 key_image = load_image('data/textures/items/key.png', -1)
@@ -119,6 +123,8 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y + 5)
         self.inventory = []
+        self.damage = 3
+        self.health = 200
 
     def move(self, dx, dy):
         self.rect.x += dx
@@ -146,14 +152,26 @@ class Player(pygame.sprite.Sprite):
             self.image = osos_images['right']
 
     def attack(self, step):
-        damage = 3
-        projectile = Projectile(self.rect.x, self.rect.y, step, damage)
+        projectile = Projectile(self.rect.x, self.rect.y, step, self.damage, self)
         all_sprites.add(projectile)
         projectiles.add(projectile)
 
+    def hp(self):
+        s = pygame.Surface((210, 50), pygame.SRCALPHA)
+        s.fill((190, 190, 190, 130))
+        screen.blit(s, (15, 15))
+        pygame.draw.rect(screen, 'red', (20, 50, abs(self.health), 10))
+        name = 'OSOS'
+        font = pygame.font.Font('C:/Windows/Fonts/times.ttf', 30)
+        name_rendered = font.render(name, True, pygame.Color(255, 204, 0))
+        intro_rect = name_rendered.get_rect()
+        intro_rect.x += 16
+        intro_rect.y += 15
+        screen.blit(name_rendered, intro_rect)
+
 
 class Projectile(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, step, damage):
+    def __init__(self, pos_x, pos_y, step, damage, shooter):
         pygame.sprite.Sprite.__init__(self)
         self.image = balticka3_images[0]
         self.rect = self.image.get_rect().move(pos_x, pos_y)
@@ -166,6 +184,7 @@ class Projectile(pygame.sprite.Sprite):
         else:
             self.dn = 1
         self.damage = 3
+        self.shooter = shooter
 
     def update(self):
         self.imnum += self.dn
@@ -182,22 +201,34 @@ class Projectile(pygame.sprite.Sprite):
             self.kill()
         if pygame.sprite.spritecollideany(self, wall_group):
             self.kill()
-        if pygame.sprite.spritecollideany(self, mob_group):
+        if pygame.sprite.spritecollideany(self, mob_group) \
+                and pygame.sprite.spritecollideany(self, mob_group) != self.shooter:
             pygame.sprite.spritecollideany(self, mob_group).health -= self.damage
+            pygame.sprite.spritecollideany(self, mob_group).image = damaged_mob_images[
+                pygame.sprite.spritecollideany(self, mob_group).who]
+            self.kill()
+        if self.rect.colliderect(player.rect) and player != self.shooter:
+            player.hp(self.damage)
             self.kill()
 
 
 class Mob(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y, who, health):
         super().__init__(player_group, all_sprites)
-        self.image = mob_images[who]
+        self.who = who
+        self.image = mob_images[self.who]
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
         self.health = health
+        self.room = 0
         mob_group.add(self)
 
     def update(self):
         if self.health <= 0:
             self.kill()
+        if self.room >= 15:
+            self.image = mob_images[self.who]
+            self.room = 0
+        self.room += 1
 
 
 class Camera:
@@ -296,6 +327,7 @@ while running:
     item_group.update()
     item_group.draw(screen)
     mob_group.update()
+    player.hp()
     if room >= 3:
         projectiles.update()
         projectiles.draw(screen)
