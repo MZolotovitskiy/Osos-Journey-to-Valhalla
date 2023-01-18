@@ -1,6 +1,7 @@
 import sys
-
+import os
 import pygame
+import random
 
 file_name = 'data/levels/Midgard.txt'
 FPS = 60
@@ -42,6 +43,20 @@ def load_image(name, color_key=None):
     return image
 
 
+def randomaiser(where):
+    print(where)
+    where = where.split('/')
+    # print(where)
+    # where.insert(3, file_name.split('/')[2].split('.')[0])
+    # print(where)
+    where = '\\'.join(where)
+    print(where)
+    for currentdir, dirs, files in os.walk('data'):
+        if currentdir == where:
+            print(where + '/' + random.choice(files))
+            return load_image(where + '/' + random.choice(files), -1)
+
+
 tile_images = {'leaves': load_image('data/textures/blocks/bamboo_large_leaves.png'),
                'empty': load_image('data/textures/blocks/grass.png'),
                'portal': load_image('data/textures/blocks/portal.png'),
@@ -59,7 +74,8 @@ tile_images = {'leaves': load_image('data/textures/blocks/bamboo_large_leaves.pn
                    pygame.transform.scale(load_image('data/textures/houses/typeL.png', -1),
                                           (207, 234)), True, False),
                'wood': pygame.transform.scale(load_image('data/textures/houses/wood.png', -1),
-                                              (180, 162))}
+                                              (180, 162)),
+               'tree': randomaiser('data/textures/blocks/trees')}
 osos_images = {'right': load_image('data/textures/mobs/osos/right.png', -1),
                'left': load_image('data/textures/mobs/osos/left.png', -1)}
 
@@ -70,17 +86,30 @@ tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 wall_group = pygame.sprite.Group()
 house_group = pygame.sprite.Group()
+tree_group = pygame.sprite.Group()
 
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__(tiles_group, all_sprites)
-        self.image = tile_images[tile_type]
-        self.rect = self.image.get_rect().move(
-            tile_width * pos_x, tile_height * pos_y)
+        if tile_type != 'tree':
+            self.image = tile_images[tile_type]
+            self.rect = self.image.get_rect().move(
+                tile_width * pos_x, tile_height * pos_y)
         self.add(all_sprites)
         if tile_type in ['waterV', 'waterH', 'leaves']:
             self.add(wall_group)
+        if tile_type == 'tree':
+            self.add(tree_group)
+            self.image = randomaiser('data/textures/blocks/trees')
+            self.rect = self.image.get_rect().move(
+                tile_width * pos_x, tile_height * pos_y)
+            # collide = True
+            # while collide:
+            #     if collide := pygame.sprite.spritecollideany(self, wall_group):
+            #         self.rect.y -= 1
+            #     collide = bool(collide)
+            #     print(collide)
         if tile_type in ['mini', 'big', 'typeL', 'storehouse', 'wood']:
             self.add(house_group)
             if tile_type == 'mini':
@@ -95,6 +124,9 @@ class Tile(pygame.sprite.Sprite):
             if tile_type == 'big':
                 self.rect = self.image.get_rect().move(
                     tile_width * pos_x - 160, tile_height * pos_y - 80)
+            if tile_type == 'storehouse':
+                self.rect = self.image.get_rect().move(
+                    tile_width * pos_x - 70, tile_height * pos_y - 272)
 
 
 class Osos(pygame.sprite.Sprite):
@@ -110,7 +142,9 @@ class Osos(pygame.sprite.Sprite):
         global player, level_x, level_y
         self.rect.x += dx
         self.rect.y += dy
-        if pygame.sprite.spritecollideany(self, wall_group):
+        if pygame.sprite.spritecollideany(self, wall_group) or \
+                pygame.sprite.spritecollideany(self, tree_group) or \
+                pygame.sprite.spritecollideany(self, house_group):
             self.rect.x -= dx
             self.rect.y -= dy
 
@@ -170,6 +204,9 @@ def generate_level(level):
             elif level[y][x] == 'W':
                 Tile('empty', x, y)
                 Tile('wood', x, y)
+            elif level[y][x] == 'T':
+                Tile('empty', x, y)
+                Tile('tree', x, y)
     return new_player, x, y
 
 
@@ -211,6 +248,7 @@ while running:
     screen.fill((0, 0, 0))
     tiles_group.draw(screen)
     house_group.draw(screen)
+    tree_group.draw(screen)
     player_group.draw(screen)
     pygame.display.flip()
     clock.tick(FPS)
