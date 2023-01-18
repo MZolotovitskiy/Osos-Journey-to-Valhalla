@@ -231,6 +231,16 @@ class Mob(pygame.sprite.Sprite):
         self.room += 1
 
 
+class Gid(Mob):
+    def Protection(self):
+        pass
+
+
+class Dialog:
+    def __init__(self):
+        pass
+
+
 class Camera:
     def __init__(self):
         self.dx = 0
@@ -264,7 +274,7 @@ def generate_level(level):
                 Mob(x, y, 'scarecrow', 5)
             elif level[y][x] == 'G':
                 Tile('empty', x, y)
-                Mob(x, y, 'gid', 100)
+                Gid(x, y, 'gid', 100)
             elif level[y][x] == 'K':
                 Tile('empty', x, y)
                 Key = AnimatedSprite(key_image, 16, 1, x, y)
@@ -316,6 +326,8 @@ while running:
                     else:
                         player.attack(8)
                     shot_room = 0
+            if event.key == pygame.K_e:
+                pass
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
