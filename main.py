@@ -6,7 +6,8 @@ import pygame
 
 file_name = 'data/levels/Svartalfh3im.txt'
 environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
-files = ['data/levels/Svartalfh3im.txt', 'data/levels/Muspelheim_1st.txt', 'data/levels/Muspelheim_2nd.txt']
+files = ['data/levels/Svartalfh3im.txt', 'data/levels/Muspelheim_1st.txt',
+         'data/levels/Muspelheim_2nd.txt']
 k = 0
 FPS = 60
 pygame.init()
@@ -49,28 +50,25 @@ def load_image(name, color_key=None):
 
 def randomaiser(where):
     # print(where)
-    file_name = 'data/levels/Muspelheim_1st.txt'
     where = where.split('/')
-    ssfqe = where[-1]
-    print(ssfqe)
     # print(where)
+    where.insert(3, file_name.split('/')[2].split('.')[0])
     # print(where)
     where = '\\'.join(where)
-    print(where)
     # print(where)
-    # for currentdir, dirs, files in os.walk('data\\textures\\blocks\\Muspelheim_1st'):
-    #     if currentdir == where:
-    #         # print(where + '/' + random.choice(files))
-    #         return load_image(where + '/' + random.choice(files))
-    ewfwa = [files for currentdir, dirs, files in os.walk(f'data\\textures\\blocks\\Muspelheim_1st\\{ssfqe}')]
-    return load_image((where + '\\' + random.choice(ewfwa[0])))
+    for currentdir, dirs, files in os.walk('data'):
+        if currentdir == where:
+            print(where + '/' + random.choice(files))
+            return load_image(where + '/' + random.choice(files))
 
 
 osos_images = {'left': load_image('data/textures/mobs/osos/left.png', -1),
                'right': load_image('data/textures/mobs/osos/right.png', -1)}
-tile_images = {'wall': load_image('data/textures/blocks/obsidian.png'),
-               'empty': load_image('data/textures/blocks/deepslate_tiles.png'),
-               'portal': load_image('data/textures/blocks/portal.png')}
+tile_images = {'wall': load_image('data/textures/blocks/Svartalfheim/obsidian.png'),
+               'empty': load_image('data/textures/blocks/Svartalfheim/deepslate_tiles.png'),
+               'portal': load_image('data/textures/blocks/Svartalfheim/portal.png')}
+item_images = {'key': load_image('data/textures/items/key.png', -1)}
+
 mob_images = {
     'scarecrow': pygame.transform.scale(load_image('data/textures/mobs/scarecrow/standard.png', -1),
                                         (64, 64)),
@@ -82,14 +80,15 @@ damaged_mob_images = {
     'scarecrow': pygame.transform.scale(load_image('data/textures/mobs/scarecrow/damage.png', -1),
                                         (64, 64)),
     'gid': pygame.transform.scale(load_image('data/textures/mobs/gid.png'), (54, 84))}
-key_image = load_image('data/textures/items/key.png', -1)
-balticka3_images = {0: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/up.png', -1), 0, 0.05),
-                    1: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/right.png', -1), 0,
-                                                 0.05),
-                    2: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/down.png', -1), 0,
-                                                 0.05),
-                    3: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/left.png', -1), 0,
-                                                 0.05)}
+balticka3_images = {
+    0: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/up.png', -1), 0,
+                                 0.05),
+    1: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/right.png', -1), 0,
+                                 0.05),
+    2: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/down.png', -1), 0,
+                                 0.05),
+    3: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/left.png', -1), 0,
+                                 0.05)}
 
 tile_width = tile_height = 64
 player = None
@@ -114,7 +113,8 @@ def show_pos(pos):
 
 
 def start_screen(screen):
-    buttons = [pygame.Rect((60, 340), (307, 87)), pygame.Rect((60, 427), (307, 87)), pygame.Rect((60, 514), (307, 87)),
+    buttons = [pygame.Rect((60, 340), (307, 87)), pygame.Rect((60, 427), (307, 87)),
+               pygame.Rect((60, 514), (307, 87)),
                pygame.Rect((60, 601), (307, 87))]
     write_intro(screen, buttons)
     pygame.display.flip()
@@ -267,36 +267,6 @@ def write_settings(screen, volume_bar, volume_bar_coord_x, sound_square, sound_e
     string_rect.top = text_coord
     screen.blit(string_rendered, string_rect)
 
-
-tile_width = tile_height = 64
-player = None
-all_sprites = pygame.sprite.Group()
-tiles_group = pygame.sprite.Group()
-player_group = pygame.sprite.Group()
-wall_group = pygame.sprite.Group()
-
-tile_images2 = {'wall': randomaiser('data/textures/blocks/Muspelheim_1st/wall'),
-                'empty': randomaiser('data/textures/blocks/Muspelheim_1st/outside'),
-                'floor': randomaiser('data/textures/blocks/Muspelheim_1st/floor'),
-                'portal_next': load_image('data/textures/blocks/portal.png'),
-                'portal_DLC': load_image('data/textures/blocks/portal.png'),
-                'portal_back': load_image('data/textures/blocks/portal.png')}
-item_images = {'key': load_image('data/textures/items/key.png', -1)}
-
-# tile_width = tile_height = 64
-# all_sprites = pygame.sprite.Group()
-# tiles_group = pygame.sprite.Group()
-# player_group = pygame.sprite.Group()
-# mob_group = pygame.sprite.Group()
-# wall_group = pygame.sprite.Group()
-portal_next = pygame.sprite.Group()
-portal_DLC = pygame.sprite.Group()
-portal_back = pygame.sprite.Group()
-
-
-# item_group = pygame.sprite.Group()
-
-
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y, level):
         super().__init__(tiles_group, all_sprites)
@@ -308,26 +278,22 @@ class Tile(pygame.sprite.Sprite):
                 self.add(wall_group)
             if tile_type == 'portal':
                 self.add(portal_group)
-        elif level == 2:
+        elif level in [2, 3]:
             if tile_type == 'wall':
-                self.image = randomaiser('data/textures/blocks/Muspelheim_1st/wall')
+                self.image = randomaiser('data/textures/blocks/wall')
                 self.add(wall_group)
             elif tile_type == 'empty':
-                self.image = randomaiser('data/textures/blocks/Muspelheim_1st/outside')
+                self.image = randomaiser('data/textures/blocks/outside')
                 self.add(all_sprites)
             elif tile_type == 'floor':
-                self.image = randomaiser('data/textures/blocks/Muspelheim_1st/floor')
+                self.image = randomaiser('data/textures/blocks/floor')
                 self.add(all_sprites)
-            elif tile_type in ['portal_next', 'portal_DLC', 'portal_back']:
-                self.image = load_image('data/textures/blocks/portal.png')
-                if tile_type == 'portal_next':
-                    self.add(portal_group)
-                elif tile_type == 'portal_DLC':
-                    self.add(portal_DLC)
-                else:
-                    self.add(portal_back)
+            elif tile_type == 'portal':
+                self.add(portal_group)
+                self.image = tile_images[tile_type]
             self.rect = self.image.get_rect().move(
                 tile_width * pos_x, tile_height * pos_y)
+
 
 
 class AnimatedSprite(pygame.sprite.Sprite):
@@ -369,25 +335,26 @@ class Player(pygame.sprite.Sprite):
     def move(self, dx, dy):
         self.rect.x += dx
         self.rect.y += dy
-        if pygame.sprite.spritecollideany(self, wall_group):
+        if pygame.sprite.spritecollideany(self, wall_group) or \
+                pygame.sprite.spritecollideany(self, mob_group):
             self.rect.x -= dx
             self.rect.y -= dy
         if pygame.sprite.spritecollideany(self, portal_group):
-            k = 0
-            for i in self.inventory:
-                if i == 'KEY':
-                    k += 1
-            if k == 2:
-                global file_name, camera, player, level_x, level_y, l
+            global file_name, camera, player, level_x, level_y, l
+            if l == 0:
+                if len(self.inventory) == 2:
+                    l += 1
+                    file_name = files[l]
+                    player, level_x, level_y = generate_level(load_level(files[l]))
+            elif l == 1:
                 l += 1
-                player, level_x, level_y = generate_level(load_level(files[l]))
                 file_name = files[l]
-            self.rect.y -= dy
-            self.rect.x -= dx
+                print(l, file_name)
+                player, level_x, level_y = generate_level(load_level(files[l]))
+            set_song()
         if other := pygame.sprite.spritecollideany(self, item_group):
-            self.inventory.append('KEY')
+            self.inventory.append(other)
             other.kill()
-
     def left_right(self, a):
         if a == 'left':
             self.image = osos_images['left']
@@ -501,6 +468,10 @@ class Camera:
 def generate_level(level):
     global Key
     new_player, x, y = None, None, None
+    load_fon = pygame.transform.scale(load_image('data/textures/fons/load.png'),
+                                      (WIDTH, HEIGHT))
+    screen.blit(load_fon, (0, 0))
+    pygame.display.flip()
     if level == load_level('data/levels/Svartalfh3im.txt'):
         for y in range(len(level)):
             for x in range(len(level[y])):
@@ -521,14 +492,12 @@ def generate_level(level):
                     Gid(x, y, 'gid', 100)
                 elif level[y][x] == 'K':
                     Tile('empty', x, y, 1)
-                    Key = AnimatedSprite(key_image, 16, 1, x, y)
+                    Key = AnimatedSprite(item_images['key'], 16, 1, x, y)
         return new_player, x, y
-    elif level == load_level('data/levels/Muspelheim_1st.txt'):
+    elif level == load_level('data/levels/Muspelheim_1st.txt') or \
+            level == load_level('data/levels/Muspelheim_2nd.txt'):
         for i in all_sprites:
             i.kill()
-        load_fon = pygame.transform.scale(load_image('data/textures/fons/load.png'), (WIDTH, HEIGHT))
-        screen.blit(load_fon, (0, 0))
-        pygame.display.flip()
         for y in range(len(level)):
             for x in range(len(level[y])):
                 if level[y][x] == '.':
@@ -541,11 +510,7 @@ def generate_level(level):
                     Tile('floor', x, y, 2)
                     new_player = Player(x, y)
                 elif level[y][x] == 'P':
-                    Tile('portal_next', x, y, 2)
-                # elif level[y][x] == 'p':
-                #     Tile('portal_DLC', x, y, 2)
-                elif level[y][x] == 'L':
-                    Tile('portal_back', x, y, 2)
+                    Tile('portal', x, y, 2)
                 elif level[y][x] == 'M':
                     Tile('floor', x, y, 2)
                     Mob(x, y, 'golem', 100)
@@ -566,13 +531,20 @@ def terminate():
 def interface_init():
     pass
 
+def set_song():
+    if l == 0:
+        pygame.mixer.music.load('data/music/02_Svartalfheim.mp3')
+        pygame.mixer.music.play(loops=-1)
+    if l == 1:
+        pygame.mixer.music.load('data/music/05_Muspelheim.mp3')
+        pygame.mixer.music.play(loops=-1)
 
 pygame.mixer.init()
 pygame.mixer.music.load('data/music/01_menuLoop.mp3')
 pygame.mixer.music.play(loops=-1)
 start_screen(screen)
-pygame.mixer.music.load('data/music/02_Svartalfheim.mp3')
-pygame.mixer.music.play(loops=-1)
+set_song()
+
 
 player, level_x, level_y = generate_level(load_level(file_name))
 
@@ -611,10 +583,6 @@ while running:
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
-        if file_name == 'data/levels/Muspelheim_1st.txt':
-            print('I am so tired')
-    # fon = pygame.transform.scale(load_image('data/textures/blocks/lava.png'), (WIDTH, HEIGHT))
-    # screen.blit(fon, (0, 0))
     screen.fill((0, 0, 0))
     tiles_group.draw(screen)
     player_group.draw(screen)
@@ -631,85 +599,3 @@ while running:
     pygame.display.flip()
     clock.tick(FPS)
 terminate()
-#
-# def generate_level(level):
-#     new_player, x, y = None, None, None
-#     for i in all_sprites:
-#         i.kill()
-#     load_fon = pygame.transform.scale(load_image('data/textures/fons/load.png'), (WIDTH, HEIGHT))
-#     screen.blit(load_fon, (0, 0))
-#     pygame.display.flip()
-#     for y in range(len(level)):
-#         for x in range(len(level[y])):
-#             if level[y][x] == '.':
-#                 Tile('floor', x, y)
-#             elif level[y][x] in [' ', '\t', '\n']:
-#                 Tile('empty', x, y)
-#             elif level[y][x] == '#':
-#                 Tile('wall', x, y)
-#             elif level[y][x] == '@':
-#                 Tile('floor', x, y)
-#                 new_player = Osos(x, y)
-#             elif level[y][x] == 'P':
-#                 Tile('portal_next', x, y)
-#             elif level[y][x] == 'p':
-#                 Tile('portal_DLC', x, y)
-#             elif level[y][x] == 'L':
-#                 Tile('portal_back', x, y)
-#             elif level[y][x] == 'M':
-#                 Tile('floor', x, y)
-#                 Mob(x, y, 100, 'golem')
-#             elif level[y][x] == 'm':
-#                 Tile('floor', x, y)
-#                 Mob(x, y, 60, 'fiend')
-#             elif level[y][x] == 'K':
-#                 Tile('floor', x, y)
-#                 AnimatedSprite(item_images['key'], 16, 1, x, y)
-#     return new_player, x, y
-#
-#
-# def terminate():
-#     pygame.quit()
-#     sys.exit()
-#
-#
-# player, level_x, level_y = generate_level(load_level(file_name))
-#
-# pygame.mixer.init()
-# pygame.mixer.music.load('data/music/05_Muspelheim.mp3')
-# pygame.mixer.music.play(loops=-1)
-#
-# camera = Camera()
-#
-# running = True
-# while running:
-#     if player.health <= 0:
-#         break
-#     for event in pygame.event.get():
-#         if event.type == pygame.QUIT:
-#             running = False
-#         elif event.type == pygame.KEYDOWN:
-#             if event.key == pygame.K_a:
-#                 player.move(-STEP, 0)
-#                 player.left_right('left')
-#             if event.key == pygame.K_d:
-#                 player.move(STEP, 0)
-#                 player.left_right('right')
-#             if event.key == pygame.K_w:
-#                 player.move(0, -STEP)
-#             if event.key == pygame.K_s:
-#                 player.move(0, STEP)
-#         camera.update(player)
-#         for sprite in all_sprites:
-#             camera.apply(sprite)
-#     screen.fill((0, 0, 0))
-#     tiles_group.draw(screen)
-#     player_group.draw(screen)
-#     for i in mob_group:
-#         if i.health <= 0:
-#             i.kill()
-#         else:
-#             i.attack()
-#     pygame.display.flip()
-#     clock.tick(FPS)
-# terminate()
