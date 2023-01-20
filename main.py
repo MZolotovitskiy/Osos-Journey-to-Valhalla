@@ -267,6 +267,7 @@ def write_settings(screen, volume_bar, volume_bar_coord_x, sound_square, sound_e
     string_rect.top = text_coord
     screen.blit(string_rendered, string_rect)
 
+
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y, level):
         super().__init__(tiles_group, all_sprites)
@@ -293,7 +294,6 @@ class Tile(pygame.sprite.Sprite):
                 self.image = tile_images[tile_type]
             self.rect = self.image.get_rect().move(
                 tile_width * pos_x, tile_height * pos_y)
-
 
 
 class AnimatedSprite(pygame.sprite.Sprite):
@@ -355,6 +355,7 @@ class Player(pygame.sprite.Sprite):
         if other := pygame.sprite.spritecollideany(self, item_group):
             self.inventory.append(other)
             other.kill()
+
     def left_right(self, a):
         if a == 'left':
             self.image = osos_images['left']
@@ -531,6 +532,7 @@ def terminate():
 def interface_init():
     pass
 
+
 def set_song():
     if l == 0:
         pygame.mixer.music.load('data/music/02_Svartalfheim.mp3')
@@ -539,12 +541,12 @@ def set_song():
         pygame.mixer.music.load('data/music/05_Muspelheim.mp3')
         pygame.mixer.music.play(loops=-1)
 
+
 pygame.mixer.init()
-pygame.mixer.music.load('data/music/01_menuLoop.mp3')
+pygame.mixer.music.load('data/music/01_menu.mp3')
 pygame.mixer.music.play(loops=-1)
 start_screen(screen)
 set_song()
-
 
 player, level_x, level_y = generate_level(load_level(file_name))
 
