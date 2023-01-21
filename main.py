@@ -22,7 +22,6 @@ l = 0
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 
-
 pygame.display.set_caption('Osos Journey to Valhalla')
 
 
@@ -503,9 +502,24 @@ class Player(pygame.sprite.Sprite):
         self.update()
 
     def attack(self, step):
-        projectile = Projectile(self.rect.x, self.rect.y, step, self.damage, self)
-        all_sprites.add(projectile)
-        projectiles.add(projectile)
+        if self.vector == 'up':
+            projectile = Projectile(self.rect.x + self.rect.width / 2, self.rect.y, step, self.damage, self)
+            all_sprites.add(projectile)
+            projectiles.add(projectile)
+        if self.vector == 'down':
+            projectile = Projectile(self.rect.x + self.rect.width / 2, self.rect.y + self.rect.height, step,
+                                    self.damage,
+                                    self)
+            all_sprites.add(projectile)
+            projectiles.add(projectile)
+        if self.vector == 'left':
+            projectile = Projectile(self.rect.x, self.rect.y, step, self.damage, self)
+            all_sprites.add(projectile)
+            projectiles.add(projectile)
+        if self.vector == 'right':
+            projectile = Projectile(self.rect.x + self.rect.width, self.rect.y, step, self.damage, self)
+            all_sprites.add(projectile)
+            projectiles.add(projectile)
 
     def hp(self):
         s = pygame.Surface((210, 50), pygame.SRCALPHA)
@@ -520,6 +534,42 @@ class Player(pygame.sprite.Sprite):
         intro_rect.y += 15
         screen.blit(name_rendered, intro_rect)
 
+    def dialog(self):
+        for sprite in mob_group:
+            rect = sprite.rect.copy()
+            rect.width += 64
+            rect.height += 64
+            if rect.colliderect(player.rect):
+                if sprite.who == 'gid':
+                    global running
+                    gid_word = [
+                        'Привет, Осос! Как твои дела? А, точно ты же не разговариваешь...', 'В общем у меня есть '
+                                                                                            'отличная идея! Я недавно прочитал про древнее существо,',
+                        'хранящее потерянную реликвию. '
+                        'Если ты победишь его, то точно станешь великим героем.']
+                    room = 0
+                    dialog_running = True
+                    s = pygame.Surface((1280, 200), pygame.SRCALPHA)
+                    s.fill((255, 255, 255, 130))
+                    screen.blit(s, (0, 520))
+                    pygame.display.flip()
+                    for i in gid_word:
+                        font = pygame.font.Font('C:/Windows/Fonts/times.ttf', 30)
+                        name_rendered = font.render(i, True, pygame.Color(0, 0, 0))
+                        trect = name_rendered.get_rect()
+                        trect.x += 1
+                        trect.y += 520 + room
+                        screen.blit(name_rendered, trect)
+                        room += 30
+                        pygame.display.flip()
+                    while dialog_running:
+                        for event in pygame.event.get():
+                            if event.type == pygame.QUIT:
+                                dialog_running = False
+                                running = False
+                            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                                dialog_running = False
+
 
 class Projectile(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y, step, damage, shooter):
@@ -527,13 +577,24 @@ class Projectile(pygame.sprite.Sprite):
         self.image = balticka3_images[0]
         self.rect = self.image.get_rect().move(pos_x, pos_y)
         self.start_x = pos_x
-        self.dx = 0
-        self.step = step
-        self.imnum = 0
-        if self.step < 0:
-            self.dn = -1
-        else:
+        self.d = 0
+        if step == 'up':
+            self.dx = 0
+            self.dy = -8
             self.dn = 1
+        elif step == 'down':
+            self.dx = 0
+            self.dy = 8
+            self.dn = 1
+        elif step == 'right':
+            self.dx = 8
+            self.dy = 0
+            self.dn = 1
+        elif step == 'left':
+            self.dx = -8
+            self.dy = 0
+            self.dn = -1
+        self.imnum = 0
         self.damage = 3
         self.shooter = shooter
 
@@ -546,9 +607,10 @@ class Projectile(pygame.sprite.Sprite):
             self.imnum = 3
         self.image = balticka3_images[self.imnum]
         self.rect = self.image.get_rect(center=center)
-        self.rect.x += self.step
-        self.dx += 8
-        if self.dx >= 192:
+        self.rect.x += self.dx
+        self.rect.y += self.dy
+        self.d += 8
+        if self.d >= 192:
             self.kill()
         if pygame.sprite.spritecollideany(self, wall_group):
             self.kill()
@@ -564,13 +626,15 @@ class Projectile(pygame.sprite.Sprite):
 
 
 class Mob(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, who, health):
+    def __init__(self, pos_x, pos_y, who, health, enemy=False, attack=None):
         super().__init__(player_group, all_sprites)
         self.who = who
         self.image = mob_images[self.who]
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
         self.health = health
         self.room = 0
+        self.enemy = enemy
+        self.damage = attack
         mob_group.add(self)
 
     def update(self):
@@ -580,16 +644,16 @@ class Mob(pygame.sprite.Sprite):
             self.image = mob_images[self.who]
             self.room = 0
         self.room += 1
+        range = self.rect.copy()
+        range.width += 192
+        range.height += 192
+        if self.enemy:
+            self.attack()
 
-
-class Gid(Mob):
-    def Protection(self):
-        pass
-
-
-class Dialog:
-    def __init__(self):
-        pass
+    # def attack(self):
+    #     projectile = Projectile(self.rect.x, self.rect.y, 'up', self.attack, self)
+    #     all_sprites.add(projectile)
+    #     projectiles.add(projectile)
 
 
 class Camera:
@@ -631,7 +695,7 @@ def generate_level(level):
                     Mob(x, y, 'scarecrow', 5)
                 elif level[y][x] == 'G':
                     Tile('emptyS', x, y, 1)
-                    Gid(x, y, 'gid', 100)
+                    Mob(x, y, 'gid', 100)
                 elif level[y][x] == 'K':
                     Tile('emptyS', x, y, 1)
                     AnimatedSprite(item_images['key'], 16, 1, x, y)
@@ -731,7 +795,7 @@ def generate_level(level):
                     Mob(x, y, 'golem', 100)
                 elif level[y][x] == 'm':
                     Tile('floor', x, y, 3)
-                    Mob(x, y, 'fiend', 60)
+                    Mob(x, y, 'fiend', 60, enemy=True, attack=5)
                 elif level[y][x] == 'K':
                     Tile('floor', x, y, 3)
                     AnimatedSprite(item_images['key'], 16, 1, x, y)
@@ -795,12 +859,12 @@ while running:
             if event.key == pygame.K_SPACE:
                 if shot_room >= 60:
                     if direction:
-                        player.attack(-8)
+                        player.attack(player.vector)
                     else:
-                        player.attack(8)
+                        player.attack(player.vector)
                     shot_room = 0
             if event.key == pygame.K_e:
-                pass
+                player.dialog()
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
