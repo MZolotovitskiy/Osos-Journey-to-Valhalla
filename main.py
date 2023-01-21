@@ -722,7 +722,7 @@ def set_song():
         pygame.mixer.music.load('data/music/03_Midgard.flac')
         pygame.mixer.music.play(loops=-1)
     if l == 2:
-        pygame.mixer.music.load('Data/music/05_Muspelheim.mp3')
+        pygame.mixer.music.load('data/music/04_Muspelheim.mp3')
         pygame.mixer.music.play(loops=-1)
 
 
