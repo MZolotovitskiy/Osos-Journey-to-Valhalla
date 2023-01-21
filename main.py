@@ -1,17 +1,20 @@
 import sys
 import os
 import random
-from os import environ
 import pygame
 
 file_name = 'data/levels/Svartalfh3im.txt'
-environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
-files = ['data/levels/Svartalfh3im.txt', 'data/levels/Muspelheim_1st.txt',
+files = ['data/levels/Svartalfh3im.txt', 'data/levels/M1dgard.txt',
+         'data/levels/Muspelheim_1st.txt',
          'data/levels/Muspelheim_2nd.txt']
-k = 0
+files_2nd_DLC = ['data/levels/wood.txt', 'data/levels/typeL.txt',
+                 'data/levels/storehouse.txt', 'data/levels/big.txt', 'data/levels/normal.txt']
+houses_with_keys = ['data/levels/M1dgard.txt', 'data/levels/wood.txt', 'data/levels/typeL.txt',
+                    'data/levels/storehouse.txt', 'data/levels/big.txt', 'data/levels/normal.txt']
 FPS = 60
 pygame.init()
 pygame.key.set_repeat(200, 70)
+
 size = WIDTH, HEIGHT = 1280, 720
 STEP = 16
 
@@ -21,7 +24,6 @@ clock = pygame.time.Clock()
 
 
 def load_level(filename):
-    # filename = "data/" + filename
     try:
         with open(filename, 'r') as mapFile:
             level_map = [line.strip() for line in mapFile]
@@ -48,26 +50,59 @@ def load_image(name, color_key=None):
     return image
 
 
-def randomaiser(where):
+def randomaiser(where, i):
     # print(where)
     where = where.split('/')
     # print(where)
-    where.insert(3, file_name.split('/')[2].split('.')[0])
+    if i:
+        where.insert(3, file_name.split('/')[2].split('.')[0])
     # print(where)
     where = '\\'.join(where)
     # print(where)
     for currentdir, dirs, files in os.walk('data'):
         if currentdir == where:
-            print(where + '/' + random.choice(files))
+            # print(where + '/' + random.choice(files))
             return load_image(where + '/' + random.choice(files))
 
 
 osos_images = {'left': load_image('data/textures/mobs/osos/left.png', -1),
                'right': load_image('data/textures/mobs/osos/right.png', -1)}
 tile_images = {'wall': load_image('data/textures/blocks/Svartalfheim/obsidian.png'),
-               'empty': load_image('data/textures/blocks/Svartalfheim/deepslate_tiles.png'),
-               'portal': load_image('data/textures/blocks/Svartalfheim/portal.png')}
-item_images = {'key': load_image('data/textures/items/key.png', -1)}
+               'emptyS': load_image('data/textures/blocks/Svartalfheim/deepslate_tiles.png'),
+               'leaves': load_image('data/textures/blocks/Midgard/bamboo_large_leaves.png'),
+               'emptyM': pygame.transform.scale(
+                   load_image('data/textures/blocks/Midgard/grass.png'),
+                   (64, 64)),
+               'portal': load_image('data/textures/blocks/Svartalfheim/portal.png'),
+               'water': pygame.transform.scale(load_image('data/textures/blocks/Midgard/water.png'),
+                                               (64, 64)),
+               'road': load_image('data/textures/blocks/Midgard/cobblestone.png'),
+               'mini': pygame.transform.scale(load_image('data/textures/houses/mini.png', -1),
+                                              (117, 147)),
+               'big': pygame.transform.scale(load_image('data/textures/houses/big.png', -1),
+                                             (415, 345)),
+               'storehouse': pygame.transform.scale(
+                   load_image('data/textures/houses/storehouse.png', -1),
+                   (268, 352)),
+               'typeL': pygame.transform.flip(
+                   pygame.transform.scale(load_image('data/textures/houses/typeL.png', -1),
+                                          (207, 234)), True, False),
+               'wood': pygame.transform.scale(load_image('data/textures/houses/wood.png', -1),
+                                              (180, 162)),
+               'normal': pygame.transform.scale(load_image('data/textures/houses/normal.png', -1),
+                                                (180, 219)),
+               'tree': load_image('data/textures/blocks/Midgard/tree.png', -1),
+               'planks': load_image('data/textures/blocks/Midgard/jungle_planks.png'),
+               'barrel': load_image('data/textures/blocks/Midgard/barrel_side.png'),
+               'quartz': load_image('data/textures/blocks/Midgard/quartz_block_side.png'),
+               'crafting_table': load_image('data/textures/blocks/Midgard/crafting_table_top.png'),
+               'furnace': load_image('data/textures/blocks/Midgard/furnace_front.png'),
+               'log': load_image('data/textures/blocks/Midgard/spruce_log.png'),
+               'hay': load_image('data/textures/blocks/Midgard/hay_block_side.png'),
+               'sand': load_image('data/textures/blocks/Midgard/sand.png'),
+               'books': load_image('data/textures/blocks/Midgard/bookshelf.png')}
+item_images = {'key': load_image('data/textures/items/key.png', -1)
+               }
 
 mob_images = {
     'scarecrow': pygame.transform.scale(load_image('data/textures/mobs/scarecrow/standard.png', -1),
@@ -101,6 +136,9 @@ item_group = pygame.sprite.Group()
 interface_group = pygame.sprite.Group()
 projectiles = pygame.sprite.Group()
 mob_group = pygame.sprite.Group()
+house_group = pygame.sprite.Group()
+tree_group = pygame.sprite.Group()
+portal_2ndLevel_back = pygame.sprite.Group()
 
 
 def terminate():
@@ -271,6 +309,7 @@ def write_settings(screen, volume_bar, volume_bar_coord_x, sound_square, sound_e
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y, level):
         super().__init__(tiles_group, all_sprites)
+        self.tile_type = tile_type
         if level == 1:
             self.image = tile_images[tile_type]
             self.rect = self.image.get_rect().move(
@@ -279,15 +318,65 @@ class Tile(pygame.sprite.Sprite):
                 self.add(wall_group)
             if tile_type == 'portal':
                 self.add(portal_group)
-        elif level in [2, 3]:
+        elif level == 2:
+            if tile_type not in ['berry', 'flower', 'portal_2ndLevel']:
+                self.image = tile_images[tile_type]
+                self.rect = self.image.get_rect().move(
+                    tile_width * pos_x, tile_height * pos_y)
+            self.add(all_sprites)
+            if tile_type in ['water', 'leaves', 'barrel', 'quartz', 'log', 'hay', 'furnace',
+                             'crafting_table', 'books']:
+                self.add(wall_group)
+            if tile_type == 'flower':
+                self.image = randomaiser('data/textures/plants/flower', None)
+                self.rect = self.image.get_rect().move(
+                    tile_width * pos_x, tile_height * pos_y)
+            if tile_type == 'berry':
+                self.image = randomaiser('data/textures/plants/sweet_berry_bush', None)
+                self.rect = self.image.get_rect().move(
+                    tile_width * pos_x, tile_height * pos_y)
+            if tile_type == 'tree':
+                self.add(tree_group)
+            if tile_type in ['mini', 'big', 'typeL', 'storehouse', 'wood', 'normal']:
+                self.add(house_group)
+                if tile_type == 'mini':
+                    self.rect = self.image.get_rect().move(
+                        tile_width * pos_x - 25, tile_height * pos_y - 80)
+                if tile_type == 'typeL':
+                    self.rect = self.image.get_rect().move(
+                        tile_width * pos_x - 13, tile_height * pos_y - 164)
+                if tile_type == 'wood':
+                    self.rect = self.image.get_rect().move(
+                        tile_width * pos_x - 55, tile_height * pos_y - 90)
+                if tile_type == 'big':
+                    self.rect = self.image.get_rect().move(
+                        tile_width * pos_x - 160, tile_height * pos_y - 80)
+                if tile_type == 'storehouse':
+                    self.rect = self.image.get_rect().move(
+                        tile_width * pos_x - 70, tile_height * pos_y - 272)
+                if tile_type == 'normal':
+                    self.rect = self.image.get_rect().move(
+                        tile_width * pos_x - 55, tile_height * pos_y - 150)
+            if tile_type == 'portal':
+                self.add(portal_group)
+            if tile_type == 'portal_2ndLevel':
+                self.add(portal_2ndLevel_back)
+                self.image = tile_images['portal']
+                self.rect = self.image.get_rect().move(
+                    tile_width * pos_x, tile_height * pos_y)
+        elif level in (3, 4):
             if tile_type == 'wall':
-                self.image = randomaiser('data/textures/blocks/wall')
+                self.image = randomaiser('data/textures/blocks/wall', 1)
                 self.add(wall_group)
             elif tile_type == 'empty':
-                self.image = randomaiser('data/textures/blocks/outside')
+                if level == 3:
+                    self.image = randomaiser('data/textures/blocks/outside', 1)
+                else:
+                    self.image = load_image(
+                        'data/textures/blocks/Muspelheim_2nd/outside/soul_soil.png')
                 self.add(all_sprites)
             elif tile_type == 'floor':
-                self.image = randomaiser('data/textures/blocks/floor')
+                self.image = randomaiser('data/textures/blocks/floor', 1)
                 self.add(all_sprites)
             elif tile_type == 'portal':
                 self.add(portal_group)
@@ -299,6 +388,7 @@ class Tile(pygame.sprite.Sprite):
 class AnimatedSprite(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
         super().__init__(all_sprites)
+        self.tile_type = sheet
         self.frames = []
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
@@ -323,38 +413,56 @@ class AnimatedSprite(pygame.sprite.Sprite):
 
 
 class Player(pygame.sprite.Sprite):
+    inventory = list()
+
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
-        self.image = osos_images['left']
+        self.tile_type = 'OSOSBATYA'
+        self.image = osos_images['right']
         self.rect = self.image.get_rect().move(
-            tile_width * pos_x, tile_height * pos_y + 5)
-        self.inventory = []
-        self.damage = 3
+            tile_width * pos_x, tile_height * pos_y)
         self.health = 200
+        self.damage = 3
+        self.inventory = []
 
     def move(self, dx, dy):
+        global file_name, camera, player, level_x, level_y, l
         self.rect.x += dx
         self.rect.y += dy
         if pygame.sprite.spritecollideany(self, wall_group) or \
-                pygame.sprite.spritecollideany(self, mob_group):
+                pygame.sprite.spritecollideany(self, mob_group) or \
+                pygame.sprite.spritecollideany(self, tree_group):
+            self.rect.x -= dx
+            self.rect.y -= dy
+        if pygame.sprite.spritecollideany(self, portal_2ndLevel_back):
+            file_name = 'data/levels/M1dgard.txt'
+            player, level_x, level_y = generate_level(load_level('data/levels/M1dgard.txt'))
+        if other := pygame.sprite.spritecollideany(self, house_group):
+            file_name = f'data/levels/{other.tile_type}.txt'
+            player, level_x, level_y = generate_level(load_level(file_name))
             self.rect.x -= dx
             self.rect.y -= dy
         if pygame.sprite.spritecollideany(self, portal_group):
-            global file_name, camera, player, level_x, level_y, l
             if l == 0:
-                if len(self.inventory) == 2:
+                if len(Player.inventory) == 2:
                     l += 1
                     file_name = files[l]
                     player, level_x, level_y = generate_level(load_level(files[l]))
             elif l == 1:
+                if len(Player.inventory) == 8:
+                    l += 1
+                    file_name = files[l]
+                    player, level_x, level_y = generate_level(load_level(files[l]))
+            elif l == 2:
                 l += 1
                 file_name = files[l]
-                print(l, file_name)
                 player, level_x, level_y = generate_level(load_level(files[l]))
             set_song()
         if other := pygame.sprite.spritecollideany(self, item_group):
-            self.inventory.append(other)
+            Player.inventory.append(other)
             other.kill()
+            if file_name in houses_with_keys:
+                del houses_with_keys[houses_with_keys.index(file_name)]
 
     def left_right(self, a):
         if a == 'left':
@@ -467,61 +575,134 @@ class Camera:
 
 
 def generate_level(level):
-    global Key
     new_player, x, y = None, None, None
     load_fon = pygame.transform.scale(load_image('data/textures/fons/load.png'),
                                       (WIDTH, HEIGHT))
     screen.blit(load_fon, (0, 0))
     pygame.display.flip()
-    if level == load_level('data/levels/Svartalfh3im.txt'):
-        for y in range(len(level)):
-            for x in range(len(level[y])):
+    for i in all_sprites:
+        i.kill()
+    for y in range(len(level)):
+        for x in range(len(level[y])):
+            if file_name == 'data/levels/Svartalfh3im.txt':
                 if level[y][x] == '.':
-                    Tile('empty', x, y, 1)
+                    Tile('emptyS', x, y, 1)
                 elif level[y][x] == '#':
                     Tile('wall', x, y, 1)
                 elif level[y][x] == '@':
-                    Tile('empty', x, y, 1)
+                    Tile('emptyS', x, y, 1)
                     new_player = Player(x, y)
                 elif level[y][x] == 'P':
                     Tile('portal', x, y, 1)
                 elif level[y][x] == 'M':
-                    Tile('empty', x, y, 1)
+                    Tile('emptyS', x, y, 1)
                     Mob(x, y, 'scarecrow', 5)
                 elif level[y][x] == 'G':
-                    Tile('empty', x, y, 1)
+                    Tile('emptyS', x, y, 1)
                     Gid(x, y, 'gid', 100)
                 elif level[y][x] == 'K':
-                    Tile('empty', x, y, 1)
-                    Key = AnimatedSprite(item_images['key'], 16, 1, x, y)
-        return new_player, x, y
-    elif level == load_level('data/levels/Muspelheim_1st.txt') or \
-            level == load_level('data/levels/Muspelheim_2nd.txt'):
-        for i in all_sprites:
-            i.kill()
-        for y in range(len(level)):
-            for x in range(len(level[y])):
-                if level[y][x] == '.':
-                    Tile('floor', x, y, 2)
-                elif level[y][x] in [' ', '\t', '\n']:
-                    Tile('empty', x, y, 2)
+                    Tile('emptyS', x, y, 1)
+                    AnimatedSprite(item_images['key'], 16, 1, x, y)
+            elif file_name == 'data/levels/M1dgard.txt' or file_name in files_2nd_DLC:
+                if level[y][x] in [' ', '\t', '\n']:
+                    Tile('emptyM', x, y, 2)
+                elif level[y][x] == '.':
+                    if file_name == 'data/levels/storehouse.txt':
+                        Tile('sand', x, y, 2)
+                    else:
+                        Tile('planks', x, y, 2)
                 elif level[y][x] == '#':
-                    Tile('wall', x, y, 2)
+                    if file_name == 'data/levels/wood.txt' or file_name == 'data/levels/storehouse.txt':
+                        Tile('barrel', x, y, 2)
+                    else:
+                        Tile('quartz', x, y, 2)
+                elif level[y][x] == 'w':
+                    Tile('water', x, y, 2)
+                elif level[y][x] == 'f':
+                    Tile('emptyM', x, y, 2)
+                    Tile('flower', x, y, 2)
+                elif level[y][x] == 'b':
+                    Tile('emptyM', x, y, 2)
+                    Tile('berry', x, y, 2)
                 elif level[y][x] == '@':
-                    Tile('floor', x, y, 2)
+                    if file_name == 'data/levels/M1dgard.txt':
+                        Tile('emptyM', x, y, 2)
+                    elif file_name == 'data/levels/storehouse.txt':
+                        Tile('sand', x, y, 2)
+                    else:
+                        Tile('planks', x, y, 2)
                     new_player = Player(x, y)
                 elif level[y][x] == 'P':
                     Tile('portal', x, y, 2)
+                elif level[y][x] == 'c':
+                    Tile('road', x, y, 2)
+                elif level[y][x] == 'm':
+                    Tile('emptyM', x, y, 2)
+                    Tile('mini', x, y, 2)
+                elif level[y][x] == 'L':
+                    Tile('emptyM', x, y, 2)
+                    Tile('typeL', x, y, 2)
+                elif level[y][x] == 'N':
+                    Tile('emptyM', x, y, 2)
+                    Tile('normal', x, y, 2)
+                elif level[y][x] == 'A':
+                    Tile('emptyM', x, y, 2)
+                    Tile('storehouse', x, y, 2)
+                elif level[y][x] == 'B':
+                    Tile('emptyM', x, y, 2)
+                    Tile('big', x, y, 2)
+                elif level[y][x] == 'W':
+                    Tile('emptyM', x, y, 2)
+                    Tile('wood', x, y, 2)
+                elif level[y][x] == 'T':
+                    Tile('emptyM', x, y, 2)
+                    Tile('tree', x, y, 2)
+                elif level[y][x] == 'z':
+                    Tile('portal_2ndLevel', x, y, 2)
+                elif level[y][x] == 'F':
+                    Tile('furnace', x, y, 2)
+                elif level[y][x] == 't':
+                    Tile('crafting_table', x, y, 2)
+                elif level[y][x] == 'e':
+                    Tile('bed', x, y, 2)
+                elif level[y][x] == 's':
+                    Tile('books', x, y, 2)
+                elif level[y][x] == 'l':
+                    Tile('log', x, y, 2)
+                elif level[y][x] == 'H':
+                    Tile('hay', x, y, 2)
+                elif level[y][x] == 'K':
+                    if file_name == 'data/levels/M1dgard.txt':
+                        Tile('emptyM', x, y, 2)
+                    elif file_name == 'data/levels/storehouse.txt':
+                        Tile('sand', x, y, 2)
+                    else:
+                        Tile('planks', x, y, 2)
+                    if file_name in houses_with_keys:
+                        AnimatedSprite(item_images['key'], 16, 1, x, y)
+            elif level == load_level('data/levels/Muspelheim_1st.txt') or \
+                    level == load_level('data/levels/Muspelheim_2nd.txt'):
+                if level[y][x] == '.':
+                    Tile('floor', x, y, 3)
+                elif level[y][x] in [' ', '\t', '\n']:
+                    Tile('empty', x, y, 3)
+                elif level[y][x] == '#':
+                    Tile('wall', x, y, 3)
+                elif level[y][x] == '@':
+                    Tile('floor', x, y, 3)
+                    new_player = Player(x, y)
+                elif level[y][x] == 'P':
+                    Tile('portal', x, y, 3)
                 elif level[y][x] == 'M':
-                    Tile('floor', x, y, 2)
+                    Tile('floor', x, y, 3)
                     Mob(x, y, 'golem', 100)
                 elif level[y][x] == 'm':
-                    Tile('floor', x, y, 2)
+                    Tile('floor', x, y, 3)
                     Mob(x, y, 'fiend', 60)
                 elif level[y][x] == 'K':
-                    Tile('floor', x, y, 2)
+                    Tile('floor', x, y, 3)
                     AnimatedSprite(item_images['key'], 16, 1, x, y)
-        return new_player, x, y
+    return new_player, x, y
 
 
 def terminate():
@@ -538,7 +719,10 @@ def set_song():
         pygame.mixer.music.load('data/music/02_Svartalfheim.mp3')
         pygame.mixer.music.play(loops=-1)
     if l == 1:
-        pygame.mixer.music.load('data/music/05_Muspelheim.mp3')
+        pygame.mixer.music.load('data/music/03_Midgard.flac')
+        pygame.mixer.music.play(loops=-1)
+    if l == 2:
+        pygame.mixer.music.load('Data/music/05_Muspelheim.mp3')
         pygame.mixer.music.play(loops=-1)
 
 
@@ -587,9 +771,11 @@ while running:
             camera.apply(sprite)
     screen.fill((0, 0, 0))
     tiles_group.draw(screen)
-    player_group.draw(screen)
-    item_group.update()
+    house_group.draw(screen)
+    tree_group.draw(screen)
     item_group.draw(screen)
+    item_group.update()
+    player_group.draw(screen)
     mob_group.update()
     player.hp()
     if room >= 3:
