@@ -23,6 +23,9 @@ screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 
 
+pygame.display.set_caption('Osos Journey to Valhalla')
+
+
 def load_level(filename):
     try:
         with open(filename, 'r') as mapFile:
@@ -65,8 +68,11 @@ def randomaiser(where, i):
             return load_image(where + '/' + random.choice(files))
 
 
-osos_images = {'left': load_image('data/textures/mobs/osos/left.png', -1),
-               'right': load_image('data/textures/mobs/osos/right.png', -1)}
+osos_images = {
+    'up': pygame.transform.scale(load_image('data/textures/mobs/osos/up.png', -1), (256, 64)),
+    'down': pygame.transform.scale(load_image('data/textures/mobs/osos/down.png', -1), (256, 64)),
+    'left': pygame.transform.scale(load_image('data/textures/mobs/osos/left.png', -1), (256, 64)),
+    'right': pygame.transform.scale(load_image('data/textures/mobs/osos/right.png', -1), (256, 64))}
 tile_images = {'wall': load_image('data/textures/blocks/Svartalfheim/obsidian.png'),
                'emptyS': load_image('data/textures/blocks/Svartalfheim/deepslate_tiles.png'),
                'leaves': load_image('data/textures/blocks/Midgard/bamboo_large_leaves.png'),
@@ -418,12 +424,43 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
         self.tile_type = 'OSOSBATYA'
-        self.image = osos_images['right']
+        self.frames_left = self.cut_sheet(osos_images['left'], 4, 1)
+        self.frames_right = self.cut_sheet(osos_images['right'], 4, 1)
+        self.frames_up = self.cut_sheet(osos_images['up'], 4, 1)
+        self.frames_down = self.cut_sheet(osos_images['down'], 4, 1)
+        self.vector = 'left'
+        self.cur_frame = 0
+        self.update()
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
+        self.add(all_sprites)
+        self.add(player_group)
         self.health = 200
         self.damage = 3
         self.inventory = []
+
+    def cut_sheet(self, sheet, columns, rows):
+        temp = list()
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                temp.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+        return temp
+
+    def update(self):
+        if self.vector == 'left':
+            self.frames = self.frames_left.copy()
+        if self.vector == 'right':
+            self.frames = self.frames_right.copy()
+        if self.vector == 'up':
+            self.frames = self.frames_up.copy()
+        if self.vector == 'down':
+            self.frames = self.frames_down.copy()
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
 
     def move(self, dx, dy):
         global file_name, camera, player, level_x, level_y, l
@@ -463,12 +500,7 @@ class Player(pygame.sprite.Sprite):
             other.kill()
             if file_name in houses_with_keys:
                 del houses_with_keys[houses_with_keys.index(file_name)]
-
-    def left_right(self, a):
-        if a == 'left':
-            self.image = osos_images['left']
-        elif a == 'right':
-            self.image = osos_images['right']
+        self.update()
 
     def attack(self, step):
         projectile = Projectile(self.rect.x, self.rect.y, step, self.damage, self)
@@ -603,7 +635,8 @@ def generate_level(level):
                 elif level[y][x] == 'K':
                     Tile('emptyS', x, y, 1)
                     AnimatedSprite(item_images['key'], 16, 1, x, y)
-            elif file_name == 'data/levels/M1dgard.txt' or file_name in files_2nd_DLC:
+            elif file_name == 'data/levels/M1dgard.txt' or file_name in files_2nd_DLC or \
+                    file_name == 'data/levels/mini.txt':
                 if level[y][x] in [' ', '\t', '\n']:
                     Tile('emptyM', x, y, 2)
                 elif level[y][x] == '.':
@@ -747,16 +780,18 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_a:
                 player.move(-STEP, 0)
-                player.left_right('left')
+                player.vector = 'left'
                 direction = True
             if event.key == pygame.K_d:
                 player.move(STEP, 0)
-                player.left_right('right')
+                player.vector = 'right'
                 direction = False
             if event.key == pygame.K_w:
                 player.move(0, -STEP)
+                player.vector = 'up'
             if event.key == pygame.K_s:
                 player.move(0, STEP)
+                player.vector = 'down'
             if event.key == pygame.K_SPACE:
                 if shot_room >= 60:
                     if direction:
