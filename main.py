@@ -45,7 +45,11 @@ def load_image(name, color_key=None):
 tile_images = {'wall': load_image('data/textures/blocks/obsidian.png'),
                'empty': load_image('data/textures/blocks/deepslate_tiles.png'),
                'portal': load_image('data/textures/blocks/portal.png')}
-player_image = load_image('data/textures/mobs/osos.png', -1)
+osos_images = {
+    'up': pygame.transform.scale(load_image('data/textures/mobs/osos/up.png', -1), (256, 64)),
+    'down': pygame.transform.scale(load_image('data/textures/mobs/osos/down.png', -1), (256, 64)),
+    'left': pygame.transform.scale(load_image('data/textures/mobs/osos/left.png', -1), (256, 64)),
+    'right': pygame.transform.scale(load_image('data/textures/mobs/osos/right.png', -1), (256, 64))}
 mob_images = {
     'scarecrow': pygame.transform.scale(load_image('data/textures/mobs/scarecrow.png', -1),
                                         (64, 64)),
@@ -102,12 +106,32 @@ class AnimatedSprite(pygame.sprite.Sprite):
 
 
 class Player(pygame.sprite.Sprite):
+    inventory = list()
+
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
-        self.image = player_image
+        self.frames_left = self.cut_sheet(osos_images['left'], 4, 1)
+        self.frames_right = self.cut_sheet(osos_images['right'], 4, 1)
+        self.frames_up = self.cut_sheet(osos_images['up'], 4, 1)
+        self.frames_down = self.cut_sheet(osos_images['down'], 4, 1)
+        self.vector = 'left'
+        self.cur_frame = 0
+        # self.frames = list()
+        self.update()
         self.rect = self.image.get_rect().move(
-            tile_width * pos_x, tile_height * pos_y + 5)
-        self.inventory = []
+            tile_width * pos_x, tile_height * pos_y)
+        self.add(all_sprites)
+
+    def cut_sheet(self, sheet, columns, rows):
+        temp = list()
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                temp.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+        return temp
 
     def move(self, dx, dy):
         self.rect.x += dx
@@ -127,6 +151,19 @@ class Player(pygame.sprite.Sprite):
         if other := pygame.sprite.spritecollideany(self, item_group):
             self.inventory.append('KEY')
             other.kill()
+        self.update()
+
+    def update(self):
+        if self.vector == 'left':
+            self.frames = self.frames_left.copy()
+        if self.vector == 'right':
+            self.frames = self.frames_right.copy()
+        if self.vector == 'up':
+            self.frames = self.frames_up.copy()
+        if self.vector == 'down':
+            self.frames = self.frames_down.copy()
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
 
 
 class Mob(pygame.sprite.Sprite):
@@ -181,8 +218,10 @@ def terminate():
     pygame.quit()
     sys.exit()
 
+
 def interface_init():
     pass
+
 
 pygame.mixer.init()
 pygame.mixer.music.load('data/music/02_Svartalfheim.mp3')
@@ -201,12 +240,16 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_a:
                 player.move(-STEP, 0)
+                player.vector = 'left'
             if event.key == pygame.K_d:
                 player.move(STEP, 0)
+                player.vector = 'right'
             if event.key == pygame.K_w:
                 player.move(0, -STEP)
+                player.vector = 'up'
             if event.key == pygame.K_s:
                 player.move(0, STEP)
+                player.vector = 'down'
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
