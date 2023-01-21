@@ -267,6 +267,7 @@ def write_settings(screen, volume_bar, volume_bar_coord_x, sound_square, sound_e
     string_rect.top = text_coord
     screen.blit(string_rendered, string_rect)
 
+
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y, level):
         super().__init__(tiles_group, all_sprites)
@@ -293,7 +294,6 @@ class Tile(pygame.sprite.Sprite):
                 self.image = tile_images[tile_type]
             self.rect = self.image.get_rect().move(
                 tile_width * pos_x, tile_height * pos_y)
-
 
 
 class AnimatedSprite(pygame.sprite.Sprite):
@@ -355,6 +355,7 @@ class Player(pygame.sprite.Sprite):
         if other := pygame.sprite.spritecollideany(self, item_group):
             self.inventory.append(other)
             other.kill()
+
     def left_right(self, a):
         if a == 'left':
             self.image = osos_images['left']
@@ -374,10 +375,45 @@ class Player(pygame.sprite.Sprite):
         name = 'OSOS'
         font = pygame.font.Font('C:/Windows/Fonts/times.ttf', 30)
         name_rendered = font.render(name, True, pygame.Color(255, 204, 0))
-        intro_rect = name_rendered.get_rect()
-        intro_rect.x += 16
-        intro_rect.y += 15
-        screen.blit(name_rendered, intro_rect)
+        rect = name_rendered.get_rect()
+        rect.x += 16
+        rect.y += 15
+        screen.blit(name_rendered, rect)
+
+    def dialog(self):
+        for sprite in mob_group:
+            rect = sprite.rect.copy()
+            rect.width += 64
+            rect.height += 64
+            if rect.colliderect(player.rect):
+                if sprite.who == 'gid':
+                    global running
+                    gid_word = [
+                        'Привет, Осос! Как твои дела? А, точно ты же не разговариваешь...', 'В общем у меня есть '
+                        'отличная идея! Я недавно прочитал про древнее существо,', 'хранящее потерянную реликвию. '
+                        'Если ты победишь его, то точно станешь великим героем.']
+                    room = 0
+                    dialog_running = True
+                    s = pygame.Surface((1280, 200), pygame.SRCALPHA)
+                    s.fill((255, 255, 255, 130))
+                    screen.blit(s, (0, 520))
+                    pygame.display.flip()
+                    for i in gid_word:
+                        font = pygame.font.Font('C:/Windows/Fonts/times.ttf', 30)
+                        name_rendered = font.render(i, True, pygame.Color(0, 0, 0))
+                        trect = name_rendered.get_rect()
+                        trect.x += 1
+                        trect.y += 520 + room
+                        screen.blit(name_rendered, trect)
+                        room += 30
+                        pygame.display.flip()
+                    while dialog_running:
+                        for event in pygame.event.get():
+                            if event.type == pygame.QUIT:
+                                dialog_running = False
+                                running = False
+                            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                                dialog_running = False
 
 
 class Projectile(pygame.sprite.Sprite):
@@ -423,7 +459,7 @@ class Projectile(pygame.sprite.Sprite):
 
 
 class Mob(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, who, health):
+    def __init__(self, pos_x, pos_y, who, health, enemy=None, attack=None):
         super().__init__(player_group, all_sprites)
         self.who = who
         self.image = mob_images[self.who]
@@ -439,16 +475,6 @@ class Mob(pygame.sprite.Sprite):
             self.image = mob_images[self.who]
             self.room = 0
         self.room += 1
-
-
-class Gid(Mob):
-    def Protection(self):
-        pass
-
-
-class Dialog:
-    def __init__(self):
-        pass
 
 
 class Camera:
@@ -489,7 +515,7 @@ def generate_level(level):
                     Mob(x, y, 'scarecrow', 5)
                 elif level[y][x] == 'G':
                     Tile('empty', x, y, 1)
-                    Gid(x, y, 'gid', 100)
+                    Mob(x, y, 'gid', 100)
                 elif level[y][x] == 'K':
                     Tile('empty', x, y, 1)
                     Key = AnimatedSprite(item_images['key'], 16, 1, x, y)
@@ -531,6 +557,7 @@ def terminate():
 def interface_init():
     pass
 
+
 def set_song():
     if l == 0:
         pygame.mixer.music.load('data/music/02_Svartalfheim.mp3')
@@ -539,12 +566,12 @@ def set_song():
         pygame.mixer.music.load('data/music/05_Muspelheim.mp3')
         pygame.mixer.music.play(loops=-1)
 
+
 pygame.mixer.init()
 pygame.mixer.music.load('data/music/01_menuLoop.mp3')
 pygame.mixer.music.play(loops=-1)
 start_screen(screen)
 set_song()
-
 
 player, level_x, level_y = generate_level(load_level(file_name))
 
@@ -579,7 +606,8 @@ while running:
                         player.attack(8)
                     shot_room = 0
             if event.key == pygame.K_e:
-                pass
+                player.dialog()
+                q = 'aboba'
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
