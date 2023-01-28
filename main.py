@@ -3,9 +3,12 @@ import os
 import random
 import pygame
 
-file_name = 'data/levels/Svartalfh3im.txt'
-files = ['data/levels/Svartalfh3im.txt', 'data/levels/M1dgard.txt',
-         'data/levels/Muspelheim_1st.txt',
+# file_name = 'data/levels/Svartalfh3im.txt'
+# files = ['data/levels/Svartalfh3im.txt', 'data/levels/M1dgard.txt',
+# 'data/levels/Muspelheim_1st.txt',
+# 'data/levels/Muspelheim_2nd.txt']
+file_name = 'data/levels/Muspelheim_1st.txt'
+files = ['data/levels/Muspelheim_1st.txt',
          'data/levels/Muspelheim_2nd.txt']
 files_2nd_DLC = ['data/levels/wood.txt', 'data/levels/typeL.txt',
                  'data/levels/storehouse.txt', 'data/levels/big.txt', 'data/levels/normal.txt']
@@ -119,7 +122,8 @@ mob_images = {
 damaged_mob_images = {
     'scarecrow': pygame.transform.scale(load_image('data/textures/mobs/scarecrow/damage.png', -1),
                                         (64, 64)),
-    'gid': pygame.transform.scale(load_image('data/textures/mobs/gid.png'), (54, 84))}
+    'gid': pygame.transform.scale(load_image('data/textures/mobs/gid.png'), (54, 84)), 'fiend': load_image(
+        'data/textures/mobs/fiend/fiend.png', -1)}
 balticka3_images = {
     0: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/up.png', -1), 0,
                                  0.05),
@@ -429,12 +433,12 @@ class Player(pygame.sprite.Sprite):
         self.frames_down = self.cut_sheet(osos_images['down'], 4, 1)
         self.vector = 'left'
         self.cur_frame = 0
+        self.health = 200
         self.update()
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
         self.add(all_sprites)
         self.add(player_group)
-        self.health = 200
         self.damage = 3
         self.inventory = []
 
@@ -522,6 +526,13 @@ class Player(pygame.sprite.Sprite):
             projectiles.add(projectile)
 
     def hp(self):
+        if self.health <= 0:
+            global cLock, running
+            self.kill()
+            screen.fill((0, 0, 0))
+            screen.blit(load_image('data/Images/DeadScreen.jpeg'), (0, 0))
+            clock.tick(10000)
+            running = False
         s = pygame.Surface((210, 50), pygame.SRCALPHA)
         s.fill((190, 190, 190, 130))
         screen.blit(s, (15, 15))
@@ -621,7 +632,7 @@ class Projectile(pygame.sprite.Sprite):
                 pygame.sprite.spritecollideany(self, mob_group).who]
             self.kill()
         if self.rect.colliderect(player.rect) and player != self.shooter:
-            player.hp(self.damage)
+            player.health -= self.damage
             self.kill()
 
 
@@ -632,7 +643,9 @@ class Mob(pygame.sprite.Sprite):
         self.image = mob_images[self.who]
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
         self.health = health
+        self.direction = 'right'
         self.room = 0
+        self.shot_room = 0
         self.enemy = enemy
         self.damage = attack
         mob_group.add(self)
@@ -641,19 +654,41 @@ class Mob(pygame.sprite.Sprite):
         if self.health <= 0:
             self.kill()
         if self.room >= 15:
-            self.image = mob_images[self.who]
+            if self.enemy:
+                if self.direction == 'right':
+                    self.image = mob_images[self.who]
+                if self.direction == 'left':
+                    self.image = pygame.transform.flip(mob_images[self.who], True, False)
+            else:
+                self.image = mob_images[self.who]
             self.room = 0
         self.room += 1
-        range = self.rect.copy()
-        range.width += 192
-        range.height += 192
         if self.enemy:
-            self.attack()
+            if self.shot_room >= 60:
+                self.attack()
+                self.shot_room = 0
+            else:
+                self.shot_room += 1
 
-    # def attack(self):
-    #     projectile = Projectile(self.rect.x, self.rect.y, 'up', self.attack, self)
-    #     all_sprites.add(projectile)
-    #     projectiles.add(projectile)
+    def attack(self):
+        global player
+        rect = self.rect.copy()
+        rect.width += 192
+        if rect.colliderect(player.rect):
+            self.direction = 'right'
+            projectile = Projectile(self.rect.x + self.rect.width, self.rect.y + self.rect.height / 2, 'right',
+                                    self.attack, self)
+            all_sprites.add(projectile)
+            projectiles.add(projectile)
+        rect = self.rect.copy()
+        rect.width -= 384
+        if rect.colliderect(player.rect):
+            self.direction = 'left'
+            self.image = pygame.transform.flip(self.image, True, False)
+            projectile = Projectile(self.rect.x, self.rect.y + self.rect.height / 2, 'left',
+                                    self.attack, self)
+            all_sprites.add(projectile)
+            projectiles.add(projectile)
 
 
 class Camera:
@@ -672,7 +707,7 @@ class Camera:
 
 def generate_level(level):
     new_player, x, y = None, None, None
-    load_fon = pygame.transform.scale(load_image('data/textures/fons/load.png'),
+    load_fon = pygame.transform.scale(load_image('data/Images/load.png'),
                                       (WIDTH, HEIGHT))
     screen.blit(load_fon, (0, 0))
     pygame.display.flip()
@@ -805,10 +840,6 @@ def generate_level(level):
 def terminate():
     pygame.quit()
     sys.exit()
-
-
-def interface_init():
-    pass
 
 
 def set_song():
