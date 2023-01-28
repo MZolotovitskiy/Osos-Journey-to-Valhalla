@@ -1,7 +1,10 @@
 import sys
 
 import pygame
+import time
 import pygame.sprite
+import datetime
+import schedule
 
 file_name = 'data/levels/Svartalfh3im.txt'
 FPS = 60
@@ -10,6 +13,7 @@ pygame.key.set_repeat(200, 70)
 
 size = WIDTH, HEIGHT = 1280, 720
 STEP = 16
+score = {'kills': 0, 'attacks': 0, 'time': None}
 
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
@@ -57,13 +61,15 @@ damaged_mob_images = {
                                         (64, 64)),
     'gid': pygame.transform.scale(load_image('data/textures/mobs/gid.png'), (54, 84))}
 key_image = load_image('data/textures/items/key.png', -1)
-balticka3_images = {0: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/up.png', -1), 0, 0.05),
-                    1: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/right.png', -1), 0,
-                                                 0.05),
-                    2: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/down.png', -1), 0,
-                                                 0.05),
-                    3: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/left.png', -1), 0,
-                                                 0.05)}
+balticka3_images = {
+    0: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/up.png', -1), 0,
+                                 0.05),
+    1: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/right.png', -1), 0,
+                                 0.05),
+    2: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/down.png', -1), 0,
+                                 0.05),
+    3: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/left.png', -1), 0,
+                                 0.05)}
 
 tile_width = tile_height = 64
 player = None
@@ -138,6 +144,7 @@ class Player(pygame.sprite.Sprite):
                 if i == 'KEY':
                     k += 1
             if k == 2:
+                final_screen()
                 terminate()
             self.rect.x -= dx
             self.rect.y -= dy
@@ -224,6 +231,7 @@ class Mob(pygame.sprite.Sprite):
 
     def update(self):
         if self.health <= 0:
+            score['kills'] += 1
             self.kill()
         if self.room >= 15:
             self.image = mob_images[self.who]
@@ -243,6 +251,64 @@ class Camera:
     def update(self, target):
         self.dx = -(target.rect.x + target.rect.w // 2 - WIDTH // 2)
         self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
+
+
+credits_list = list()
+
+
+def load_credits():
+    global credits_list
+    with open('data/credits.txt', mode='rt', encoding='utf-8') as file:
+        credits_list = file.read().split('\n')
+    print(score)
+    for i in ['Убийств -', 'Времени в игре -', 'Потрачено пива (литры) -']:
+        k = credits_list.index(i)
+        if i == 'Убийств -':
+            credits_list[k] += (' ' + str(score['kills']))
+        if i == 'Времени в игре -':
+            credits_list[k] += (' ' + str(datetime.datetime.now() - score['time']))
+        if i == 'Потрачено пива (литры) -':
+            credits_list[k] += (' ' + str(score['attacks'] / 2))
+
+
+credit = 0
+
+
+def credits():
+    global credit
+    if credit <= 32:
+        screen.fill((0, 0, 0))
+        font = pygame.font.Font('C:/Windows/Fonts/times.ttf', 50)
+        font.set_italic(True)
+        text = font.render(credits_list[credit], True, (100, 255, 100))
+        credit += 1
+        text_x = WIDTH // 2 - text.get_width() // 2
+        text_y = HEIGHT // 2 - text.get_height() // 2
+        screen.blit(text, (text_x, text_y))
+
+
+def final_screen():
+    global camera, player
+    camera = None
+    for i in all_sprites:
+        i.kill()
+    screen.fill((0, 0, 0))
+    pygame.display.flip()
+    final = True
+    pygame.mixer.music.load('data/music/06_Valhall.mp3')
+    pygame.mixer.music.play()
+    load_credits()
+    credits()
+    schedule.every(3).seconds.do(credits)
+    while final:
+        if not pygame.mixer.music.get_busy():
+            final = False
+        schedule.run_pending()
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT:
+                final = False
+        pygame.display.flip()
+        clock.tick(FPS / 2)
 
 
 def generate_level(level):
@@ -276,8 +342,16 @@ def terminate():
     sys.exit()
 
 
-def interface_init():
-    pass
+def set_song(final):
+    if l == 0:
+        pygame.mixer.music.load('data/music/02_Svartalfheim.mp3')
+        pygame.mixer.music.play(loops=-1)
+    if l == 1:
+        pygame.mixer.music.load('data/music/03_Midgard.flac')
+        pygame.mixer.music.play(loops=-1)
+    if l == 2:
+        pygame.mixer.music.load('data/music/04_Muspelheim.mp3')
+        pygame.mixer.music.play(loops=-1)
 
 
 pygame.mixer.init()
@@ -286,13 +360,13 @@ pygame.mixer.music.play(loops=-1)
 
 player, level_x, level_y = generate_level(load_level(file_name))
 
+score['time'] = datetime.datetime.now()
 camera = Camera()
 direction = True
 running = True
 room = 4
 shot_room = 60
 while running:
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -315,10 +389,12 @@ while running:
                         player.attack(-8)
                     else:
                         player.attack(8)
+                    score['attacks'] += 1
                     shot_room = 0
-        camera.update(player)
-        for sprite in all_sprites:
-            camera.apply(sprite)
+        if camera:
+            camera.update(player)
+            for sprite in all_sprites:
+                camera.apply(sprite)
     # fon = pygame.transform.scale(load_image('data/textures/blocks/lava.png'), (WIDTH, HEIGHT))
     # screen.blit(fon, (0, 0))
     screen.fill((0, 0, 0))
