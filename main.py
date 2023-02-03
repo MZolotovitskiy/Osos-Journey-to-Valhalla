@@ -3,13 +3,13 @@ import os
 import random
 import pygame
 
-# file_name = 'data/levels/Svartalfh3im.txt'
-# files = ['data/levels/Svartalfh3im.txt', 'data/levels/M1dgard.txt',
-# 'data/levels/Muspelheim_1st.txt',
-# 'data/levels/Muspelheim_2nd.txt']
-file_name = 'data/levels/Muspelheim_1st.txt'
-files = ['data/levels/Muspelheim_1st.txt',
+file_name = 'data/levels/Svartalfh3im.txt'
+files = ['data/levels/Svartalfh3im.txt', 'data/levels/M1dgard.txt',
+         'data/levels/Muspelheim_1st.txt',
          'data/levels/Muspelheim_2nd.txt']
+# file_name = 'data/levels/Muspelheim_1st.txt'
+# files = ['data/levels/Muspelheim_1st.txt',
+#          'data/levels/Muspelheim_2nd.txt']
 files_2nd_DLC = ['data/levels/wood.txt', 'data/levels/typeL.txt',
                  'data/levels/storehouse.txt', 'data/levels/big.txt', 'data/levels/normal.txt']
 houses_with_keys = ['data/levels/M1dgard.txt', 'data/levels/wood.txt', 'data/levels/typeL.txt',
@@ -118,21 +118,27 @@ mob_images = {
     'gid': pygame.transform.scale(load_image('data/textures/mobs/gid.png'), (54, 84)),
     'fiend': load_image('data/textures/mobs/fiend/stay.png', -1),
     'fiend_attack': load_image('data/textures/mobs/fiend/attack.png', -1),
-    'golem': load_image('data/textures/mobs/golem/stay.png')}
+    'golem': load_image('data/textures/mobs/golem/stay.png', -1),
+    'golem_attack': load_image('data/textures/mobs/golem/attack.png', -1),
+    'golem_walk': load_image('data/textures/mobs/golem/walking.png', -1),
+    'golem_die_1': load_image('data/textures/mobs/golem/dying_1.png', -1),
+    'golem_die_2': load_image('data/textures/mobs/golem/dying_2.png', -1)}
 damaged_mob_images = {
     'scarecrow': pygame.transform.scale(load_image('data/textures/mobs/scarecrow/damage.png', -1),
                                         (64, 64)),
     'gid': pygame.transform.scale(load_image('data/textures/mobs/gid.png'), (54, 84)), 'fiend': load_image(
-        'data/textures/mobs/fiend/fiend.png', -1)}
-balticka3_images = {
-    0: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/up.png', -1), 0,
-                                 0.05),
-    1: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/right.png', -1), 0,
-                                 0.05),
-    2: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/down.png', -1), 0,
-                                 0.05),
-    3: pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/left.png', -1), 0,
-                                 0.05)}
+        'data/textures/mobs/fiend/fiend.png', -1), 'golem': load_image('data/textures/mobs/golem/damage.png', -1)}
+balticka3_images = [
+    pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/up.png', -1), 0,
+                              0.05),
+    pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/right.png', -1), 0,
+                              0.05),
+    pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/down.png', -1), 0,
+                              0.05),
+    pygame.transform.rotozoom(load_image('data/textures/projectiles/balticka3/left.png', -1), 0,
+                              0.05)]
+golem_projectile_1 = load_image('data/textures/mobs/golem/Projectile_1.png', -1)
+golem_projectile_2 = load_image('data/textures/mobs/golem/Projectile_2.png', -1)
 
 tile_width = tile_height = 64
 player = None
@@ -469,11 +475,13 @@ class Player(pygame.sprite.Sprite):
         global file_name, camera, player, level_x, level_y, l
         self.rect.x += dx
         self.rect.y += dy
-        if pygame.sprite.spritecollideany(self, wall_group) or \
-                pygame.sprite.spritecollideany(self, mob_group) or \
-                pygame.sprite.spritecollideany(self, tree_group):
+        if pygame.sprite.spritecollideany(self, wall_group) or pygame.sprite.spritecollideany(self, tree_group):
             self.rect.x -= dx
             self.rect.y -= dy
+        for mob in mob_group:
+            if pygame.sprite.collide_mask(self, mob):
+                self.rect.x -= dx
+                self.rect.y -= dy
         if pygame.sprite.spritecollideany(self, portal_2ndLevel_back):
             file_name = 'data/levels/M1dgard.txt'
             player, level_x, level_y = generate_level(load_level('data/levels/M1dgard.txt'))
@@ -507,21 +515,22 @@ class Player(pygame.sprite.Sprite):
 
     def attack(self, step):
         if self.vector == 'up':
-            projectile = Projectile(self.rect.x + self.rect.width / 2, self.rect.y, step, self.damage, self)
+            projectile = Projectile(self.rect.x + self.rect.width / 2, self.rect.y, step, self.damage, self,
+                                    balticka3_images)
             all_sprites.add(projectile)
             projectiles.add(projectile)
         if self.vector == 'down':
             projectile = Projectile(self.rect.x + self.rect.width / 2, self.rect.y + self.rect.height, step,
-                                    self.damage,
-                                    self)
+                                    self.damage, self, balticka3_images)
             all_sprites.add(projectile)
             projectiles.add(projectile)
         if self.vector == 'left':
-            projectile = Projectile(self.rect.x, self.rect.y, step, self.damage, self)
+            projectile = Projectile(self.rect.x, self.rect.y, step, self.damage, self, balticka3_images)
             all_sprites.add(projectile)
             projectiles.add(projectile)
         if self.vector == 'right':
-            projectile = Projectile(self.rect.x + self.rect.width, self.rect.y, step, self.damage, self)
+            projectile = Projectile(self.rect.x + self.rect.width, self.rect.y, step, self.damage, self,
+                                    balticka3_images)
             all_sprites.add(projectile)
             projectiles.add(projectile)
 
@@ -583,9 +592,12 @@ class Player(pygame.sprite.Sprite):
 
 
 class Projectile(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y, step, damage, shooter):
+    def __init__(self, pos_x, pos_y, step, direction, shooter, frames, detonate_frames=None):
         pygame.sprite.Sprite.__init__(self)
-        self.image = balticka3_images[0]
+        self.frames = frames
+        self.detonate_frames = detonate_frames
+        self.image = self.frames[0]
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect().move(pos_x, pos_y)
         self.start_x = pos_x
         self.d = 0
@@ -605,31 +617,40 @@ class Projectile(pygame.sprite.Sprite):
             self.dx = -8
             self.dy = 0
             self.dn = -1
-        self.imnum = 0
+        self.imnum = 1
         self.damage = 3
         self.shooter = shooter
 
     def update(self):
         self.imnum += self.dn
         center = self.rect.center
-        if self.imnum > 3:
-            self.imnum = 0
+        if self.detonate_frames and self.d >= 96:
+            self.frames = self.detonate_frames
+        if self.imnum > len(self.frames):
+            self.imnum = 1
         elif self.imnum < 0:
-            self.imnum = 3
-        self.image = balticka3_images[self.imnum]
+            self.imnum = len(self.frames)
+        self.image = self.frames[self.imnum - 1]
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect(center=center)
         self.rect.x += self.dx
         self.rect.y += self.dy
         self.d += 8
         if self.d >= 192:
             self.kill()
-        if pygame.sprite.spritecollideany(self, wall_group):
-            self.kill()
-        if pygame.sprite.spritecollideany(self, mob_group) \
-                and pygame.sprite.spritecollideany(self, mob_group) != self.shooter:
-            pygame.sprite.spritecollideany(self, mob_group).health -= self.damage
-            pygame.sprite.spritecollideany(self, mob_group).image = damaged_mob_images[
-                pygame.sprite.spritecollideany(self, mob_group).who]
+        for wall in wall_group:
+            if pygame.sprite.collide_mask(wall, self):
+                self.kill()
+        victim = pygame.sprite.spritecollideany(self, mob_group)
+        if victim and victim != self.shooter:
+            victim.health -= self.damage
+            if victim.enemy:
+                if victim.direction == 'left':
+                    victim.image = pygame.transform.flip(damaged_mob_images[victim.who], True, False)
+                if victim.direction == 'right':
+                    victim.image = damaged_mob_images[victim.who]
+            else:
+                victim.image = damaged_mob_images[victim.who]
             self.kill()
         if self.rect.colliderect(player.rect) and player != self.shooter:
             player.health -= self.damage
@@ -639,32 +660,81 @@ class Projectile(pygame.sprite.Sprite):
 class Mob(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y, who, health, enemy=False, attack=None):
         super().__init__(player_group, all_sprites)
+        global golem_projectile_1, golem_projectile_2
         self.who = who
         self.image = mob_images[self.who]
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
         self.health = health
+        self.mask = pygame.mask.from_surface(self.image)
         self.direction = 'right'
         self.room = 0
         self.shot_room = 0
         self.enemy = enemy
         self.damage = attack
+        self.attacking = False
+        self.shooting = False
+        self.dying = False
+        self.start_point = 0
+        self.attack_frame = 0
+        self.die_frames = 0
+        if self.enemy:
+            self.die_sheets = self.cut_sheet(mob_images[self.who + '_die_1'], 3, 1) + self.cut_sheet(
+                mob_images[self.who + '_die_2'], 3, 1)
+            self.attack_sheets = self.cut_sheet(mob_images[self.who + '_attack'], 5, 1)
+            sheets = self.cut_sheet(golem_projectile_1, 6, 1) + self.cut_sheet(golem_projectile_2, 5, 1)
+            self.projectile_sheets = sheets
         mob_group.add(self)
 
+    def cut_sheet(self, sheet, columns, rows):
+        temp = list()
+        rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                           sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (rect.w * i, rect.h * j)
+                temp.append(sheet.subsurface(pygame.Rect(
+                    frame_location, rect.size)))
+        return temp
+
     def update(self):
-        if self.health <= 0:
+        if self.health <= 0 and not self.enemy:
             self.kill()
-        if self.room >= 15:
+        elif self.health <= 0 and self.enemy:
+            self.dying = True
+        if self.dying:
+            if self.direction == 'left':
+                self.image = self.die_sheets[int(self.attack_frame)]
+            else:
+                self.image = pygame.transform.flip(self.die_sheets[int(self.attack_frame)], True, False)
+            self.die_frames += 0.005
+        if self.die_frames >= 5:
+            self.kill()
+        if self.attacking:
+            if self.direction == 'left':
+                self.image = self.attack_sheets[int(self.attack_frame)]
+            else:
+                self.image = pygame.transform.flip(self.attack_sheets[int(self.attack_frame)], True, False)
+            self.attack_frame += 0.05
+        if self.attack_frame >= 5:
+            self.attack_frame = 0
+            self.attacking = False
+            projectile = Projectile(self.rect.x + self.start_point, self.rect.y + 25, self.direction,
+                                    self.attack, self, self.projectile_sheets[0:6],
+                                    detonate_frames=self.projectile_sheets[6::])
+            all_sprites.add(projectile)
+            projectiles.add(projectile)
+        elif self.room >= 15 and not self.attacking:
             if self.enemy:
                 if self.direction == 'right':
-                    self.image = mob_images[self.who]
-                if self.direction == 'left':
                     self.image = pygame.transform.flip(mob_images[self.who], True, False)
+                if self.direction == 'left':
+                    self.image = mob_images[self.who]
             else:
                 self.image = mob_images[self.who]
             self.room = 0
         self.room += 1
         if self.enemy:
-            if self.shot_room >= 60:
+            if self.shot_room >= 60 and not self.attacking:
                 self.attack()
                 self.shot_room = 0
             else:
@@ -672,23 +742,18 @@ class Mob(pygame.sprite.Sprite):
 
     def attack(self):
         global player
-        rect = self.rect.copy()
-        rect.width += 192
-        if rect.colliderect(player.rect):
+        rect_l = pygame.Rect(self.rect[0] - 192, self.rect[1], 192, 192)
+        rect_r = pygame.Rect(self.rect[0] + self.rect.width, self.rect[1], 192, 192)
+        if rect_r.colliderect(player.rect):
+            self.attacking = True
             self.direction = 'right'
-            projectile = Projectile(self.rect.x + self.rect.width, self.rect.y + self.rect.height / 2, 'right',
-                                    self.attack, self)
-            all_sprites.add(projectile)
-            projectiles.add(projectile)
-        rect = self.rect.copy()
-        rect.width -= 384
-        if rect.colliderect(player.rect):
+            self.start_point = self.rect.width
+        elif rect_l.colliderect(player.rect):
+            self.attacking = True
             self.direction = 'left'
-            self.image = pygame.transform.flip(self.image, True, False)
-            projectile = Projectile(self.rect.x, self.rect.y + self.rect.height / 2, 'left',
-                                    self.attack, self)
-            all_sprites.add(projectile)
-            projectiles.add(projectile)
+            self.start_point = 0
+        rect_r = 0
+        rect_l = 0
 
 
 class Camera:
@@ -827,7 +892,7 @@ def generate_level(level):
                     Tile('portal', x, y, 3)
                 elif level[y][x] == 'M':
                     Tile('floor', x, y, 3)
-                    Mob(x, y, 'golem', 100)
+                    Mob(x, y, 'golem', 99, enemy=True, attack=10)
                 elif level[y][x] == 'm':
                     Tile('floor', x, y, 3)
                     Mob(x, y, 'fiend', 60, enemy=True, attack=5)
@@ -910,8 +975,8 @@ while running:
     player.hp()
     if room >= 3:
         projectiles.update()
-        projectiles.draw(screen)
         room = 0
+    projectiles.draw(screen)
     room += 1
     shot_room += 1
     pygame.display.flip()
